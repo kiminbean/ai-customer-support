@@ -19,6 +19,7 @@ function Navbar() {
             <Link href="/demo" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">데모</Link>
             <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">대시보드</Link>
             <Link href="/datahub" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">데이터 허브</Link>
+            <Link href="/crawler" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">웹 크롤러</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block">
