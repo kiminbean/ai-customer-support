@@ -106,3 +106,114 @@ export async function checkHealth(): Promise<boolean> {
     return false;
   }
 }
+
+// ── Data Hub API ──
+
+export interface DatahubDomain {
+  domain: string;
+  count: number;
+  icon?: string;
+  description?: string;
+}
+
+export interface DatahubDataset {
+  id: string;
+  name: string;
+  description?: string;
+  domain?: string;
+  size?: string;
+  language?: string;
+  quality_score?: number;
+  format?: string;
+  use_cases?: string[];
+  status?: 'not_downloaded' | 'downloading' | 'downloaded' | 'processing' | 'imported';
+  download_progress?: number;
+  process_progress?: number;
+}
+
+export interface DatahubJobResponse {
+  job_id: string;
+}
+
+export interface DatahubJobStatus {
+  job_id: string;
+  status: string;
+  progress: number;
+  error?: string;
+}
+
+export interface DatahubImportedDataset {
+  dataset_id: string;
+  name?: string;
+  imported_at?: string;
+  qa_pairs?: number;
+  documents?: number;
+}
+
+export async function getDatahubDomains(): Promise<DatahubDomain[]> {
+  const res = await fetch(`${API_BASE}/api/datahub/domains`);
+  if (!res.ok) throw new Error(`Datahub domains error: ${res.status}`);
+  return res.json();
+}
+
+export async function getDatahubDatasets(domain?: string): Promise<DatahubDataset[]> {
+  const url = domain
+    ? `${API_BASE}/api/datahub/datasets?domain=${encodeURIComponent(domain)}`
+    : `${API_BASE}/api/datahub/datasets`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Datahub datasets error: ${res.status}`);
+  return res.json();
+}
+
+export async function searchDatahubDatasets(query: string): Promise<DatahubDataset[]> {
+  const res = await fetch(`${API_BASE}/api/datahub/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error(`Datahub search error: ${res.status}`);
+  return res.json();
+}
+
+export async function downloadDataset(datasetId: string): Promise<DatahubJobResponse> {
+  const res = await fetch(`${API_BASE}/api/datahub/download`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataset_id: datasetId }),
+  });
+  if (!res.ok) throw new Error(`Datahub download error: ${res.status}`);
+  return res.json();
+}
+
+export async function getDownloadStatus(jobId: string): Promise<DatahubJobStatus> {
+  const res = await fetch(`${API_BASE}/api/datahub/download/${encodeURIComponent(jobId)}/status`);
+  if (!res.ok) throw new Error(`Datahub download status error: ${res.status}`);
+  return res.json();
+}
+
+export async function processDataset(datasetId: string, translate: boolean): Promise<DatahubJobResponse> {
+  const res = await fetch(`${API_BASE}/api/datahub/process`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataset_id: datasetId, translate }),
+  });
+  if (!res.ok) throw new Error(`Datahub process error: ${res.status}`);
+  return res.json();
+}
+
+export async function getProcessStatus(jobId: string): Promise<DatahubJobStatus> {
+  const res = await fetch(`${API_BASE}/api/datahub/process/${encodeURIComponent(jobId)}/status`);
+  if (!res.ok) throw new Error(`Datahub process status error: ${res.status}`);
+  return res.json();
+}
+
+export async function importDataset(datasetId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/datahub/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataset_id: datasetId }),
+  });
+  if (!res.ok) throw new Error(`Datahub import error: ${res.status}`);
+}
+
+export async function getImportedDatasets(): Promise<DatahubImportedDataset[]> {
+  const res = await fetch(`${API_BASE}/api/datahub/imported`);
+  if (!res.ok) throw new Error(`Datahub imported error: ${res.status}`);
+  return res.json();
+}
