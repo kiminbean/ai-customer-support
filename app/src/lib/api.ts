@@ -340,3 +340,153 @@ export async function getCrawlJobs(): Promise<CrawlJob[]> {
   if (!res.ok) throw new Error(`Crawler jobs error: ${res.status}`);
   return res.json();
 }
+
+// ── Voice API ──
+
+export interface VoiceJobResponse {
+  job_id: string;
+  status: string;
+  progress: number;
+  current_step: string;
+  source_file: string;
+  message: string;
+}
+
+export interface VoiceJobStatus {
+  job_id: string;
+  status: string;
+  progress: number;
+  current_step: string;
+  source_file: string;
+  created_at: string;
+  updated_at: string;
+  error_message: string | null;
+}
+
+export interface VoiceTranscriptSegment {
+  speaker: string;
+  text: string;
+  start_time: number;
+  end_time: number;
+}
+
+export interface VoiceTranscript {
+  job_id: string;
+  transcript: {
+    segments: VoiceTranscriptSegment[];
+    language: string;
+    duration: number;
+    method: string;
+  };
+  full_text: string;
+}
+
+export interface VoiceQAPair {
+  question: string;
+  answer: string;
+  category: string;
+  confidence: number;
+}
+
+export interface VoiceDocument {
+  job_id: string;
+  status: string;
+  document: {
+    qa_pairs: VoiceQAPair[];
+    qa_count: number;
+    primary_category: string;
+    confidence: number;
+    source_file: string;
+    generated_date: string;
+    markdown: string;
+  };
+  preview: string;
+}
+
+export interface VoiceJob {
+  job_id: string;
+  status: string;
+  progress: number;
+  current_step: string;
+  source_file: string;
+  created_at: string;
+  updated_at: string;
+  error_message: string | null;
+  transcript_summary?: {
+    segment_count: number;
+    duration: number;
+    language: string;
+    method: string;
+  };
+  document_summary?: {
+    qa_count: number;
+    primary_category: string;
+    confidence: number;
+  };
+}
+
+export async function uploadVoice(file: File): Promise<VoiceJobResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_BASE}/api/voice/upload`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() },
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`Voice upload error: ${res.status}`);
+  return res.json();
+}
+
+export async function runVoiceDemo(): Promise<VoiceJobResponse> {
+  const res = await fetch(`${API_BASE}/api/voice/demo`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(`Voice demo error: ${res.status}`);
+  return res.json();
+}
+
+export async function getVoiceJobStatus(jobId: string): Promise<VoiceJobStatus> {
+  const res = await fetch(`${API_BASE}/api/voice/status/${encodeURIComponent(jobId)}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(`Voice status error: ${res.status}`);
+  return res.json();
+}
+
+export async function getVoiceTranscript(jobId: string): Promise<VoiceTranscript> {
+  const res = await fetch(`${API_BASE}/api/voice/transcript/${encodeURIComponent(jobId)}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(`Voice transcript error: ${res.status}`);
+  return res.json();
+}
+
+export async function getVoiceDocument(jobId: string): Promise<VoiceDocument> {
+  const res = await fetch(`${API_BASE}/api/voice/document/${encodeURIComponent(jobId)}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(`Voice document error: ${res.status}`);
+  return res.json();
+}
+
+export async function approveVoiceDocument(
+  jobId: string,
+  qaPairs?: VoiceQAPair[]
+): Promise<{ status: string; documents_added: number; message: string }> {
+  const res = await fetch(`${API_BASE}/api/voice/document/${encodeURIComponent(jobId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ qa_pairs: qaPairs }),
+  });
+  if (!res.ok) throw new Error(`Voice approve error: ${res.status}`);
+  return res.json();
+}
+
+export async function getVoiceJobs(): Promise<{ jobs: VoiceJob[]; total: number }> {
+  const res = await fetch(`${API_BASE}/api/voice/jobs`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(`Voice jobs error: ${res.status}`);
+  return res.json();
+}

@@ -5,7 +5,7 @@ import { LogoIcon } from "@/components/icons";
 import { BackendBadge } from "@/components/BackendBadge";
 
 interface DashboardSidebarProps {
-  activePage: "dashboard" | "datahub" | "crawler";
+  activePage: "dashboard" | "datahub" | "crawler" | "voice";
   backendOnline: boolean;
 }
 
@@ -37,6 +37,16 @@ const NAV_ITEMS = [
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+      </svg>
+    ),
+  },
+  {
+    id: "voice" as const,
+    label: "음성 분석",
+    href: "/voice",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-14 0m14 0a7 7 0 00-14 0m14 0v1a7 7 0 01-14 0v-1m7 8v3m-3 0h6M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z" />
       </svg>
     ),
   },

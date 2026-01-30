@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { Navbar } from "@/components/Navbar";
 import { sendMessage as apiSendMessage, type ChatResponse } from "@/lib/api";
 import { useHealthCheck } from "@/hooks/useHealthCheck";
 import { FAQ_RESPONSES } from "@/data/mock-faq";
@@ -189,34 +190,8 @@ export default function DemoPage() {
   const quickQuestions = ["배송 조회", "반품 신청", "결제 오류", "쿠폰 사용법"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-gray-900">SupportAI</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              {/* Backend status indicator */}
-              <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
-                backendOnline
-                  ? "bg-green-50 text-green-700"
-                  : "bg-gray-100 text-gray-400"
-              }`}>
-                <span className={`w-2 h-2 rounded-full ${backendOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-                {backendOnline ? "AI 백엔드 연결됨" : "데모 모드"}
-              </span>
-              <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← 홈으로</Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <Navbar variant="app" activePage="demo" />
 
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-center mb-6">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Navbar } from "@/components/Navbar";
 
 export default function WidgetPage() {
   const [chatOpen, setChatOpen] = useState(true);
@@ -33,26 +34,8 @@ export default function WidgetPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-gray-900">SupportAI</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link href="/demo" className="text-sm text-gray-500 hover:text-gray-700">데모 체험</Link>
-              <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← 홈으로</Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <Navbar variant="app" activePage="widget" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-10">
