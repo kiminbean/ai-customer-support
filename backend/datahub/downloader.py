@@ -9,10 +9,13 @@ huggingface_hub 라이브러리를 사용하여 데이터셋을 다운로드하�
 from __future__ import annotations
 
 import json
+import logging
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 import config
 
@@ -190,8 +193,8 @@ def download_dataset(
             try:
                 records = json.loads(data_file.read_text(encoding="utf-8"))
                 record_count = len(records)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("캐시 데이터 로드 실패 (%s): %s", dataset_id, e)
         return {
             "status": STATUS_CACHED,
             "dataset_id": dataset_id,
@@ -398,7 +401,8 @@ def get_download_info(dataset_id: str) -> Optional[Dict]:
     if meta_file.exists():
         try:
             return json.loads(meta_file.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            logger.warning("메타데이터 로드 실패 (%s): %s", dataset_id, e)
             return None
     return None
 
@@ -410,7 +414,8 @@ def get_downloaded_data(dataset_id: str) -> Optional[List[Dict]]:
     if data_file.exists():
         try:
             return json.loads(data_file.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            logger.warning("다운로드 데이터 로드 실패 (%s): %s", dataset_id, e)
             return None
     return None
 

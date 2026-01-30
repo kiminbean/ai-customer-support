@@ -93,3 +93,8 @@ html {
 .chart-bar {
   animation: grow-bar 0.8s ease-out forwards;
 }
+
+.scrollable-list > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60px;
+}

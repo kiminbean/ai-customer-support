@@ -27,6 +27,19 @@ _splitter = RecursiveCharacterTextSplitter(
 
 # ── 문서 처리 ──────────────────────────────────────────────
 
+def load_text_content(
+    content: str,
+    source: str,
+    metadata: Optional[Dict] = None,
+) -> List[Dict]:
+    """
+    텍스트 콘텐츠를 직접 받아 벡터 스토어에 저장.
+    크롤러 등 외부 모듈에서 RAG 가져오기 시 사용하는 진입점.
+    """
+    doc_type = (metadata or {}).get("doc_type", "text")
+    return load_text(content, source=source, doc_type=doc_type)
+
+
 def load_text(text: str, source: str, doc_type: str = "text") -> List[Dict]:
     """
     원시 텍스트를 청크로 분할하여 벡터 스토어에 저장.

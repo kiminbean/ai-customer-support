@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { BackendBadge } from "@/components/BackendBadge";
+import { useHealthCheck } from "@/hooks/useHealthCheck";
 import {
-  checkHealth,
   getAnalytics,
   getConversations,
   getDocuments,
@@ -56,18 +57,6 @@ const AI_SETTINGS_DEFAULT = {
 };
 
 type TabType = "overview" | "conversations" | "analytics" | "knowledge" | "settings";
-
-// ── Backend Status Badge ──
-function BackendBadge({ online }: { online: boolean }) {
-  return (
-    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
-      online ? "bg-green-50 text-green-700" : "bg-red-50 text-red-500"
-    }`}>
-      <span className={`w-2 h-2 rounded-full ${online ? "bg-green-500 animate-pulse" : "bg-red-400"}`} />
-      {online ? "백엔드 연결됨" : "오프라인 (데모)"}
-    </div>
-  );
-}
 
 // ── Sidebar ──
 function Sidebar({ activeTab, setActiveTab, backendOnline }: { activeTab: TabType; setActiveTab: (t: TabType) => void; backendOnline: boolean }) {
@@ -237,7 +226,7 @@ function OverviewTab({ backendOnline, conversations }: { backendOnline: boolean;
               </div>
               <div className="text-right shrink-0">
                 <div className="text-[10px] text-gray-400">{conv.time}</div>
-                {conv.satisfaction && (
+                {conv.satisfaction != null && (
                   <div className="flex gap-0.5 mt-1 justify-end">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <span key={i} className={`text-[10px] ${i < conv.satisfaction! ? "text-yellow-400" : "text-gray-200"}`}>★</span>
@@ -735,21 +724,9 @@ function SettingsTab({ backendOnline }: { backendOnline: boolean }) {
 // ── Main Dashboard ──
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const [backendOnline, setBackendOnline] = useState(false);
+  const backendOnline = useHealthCheck();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-
-  // Health check
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    const check = async () => {
-      const healthy = await checkHealth();
-      setBackendOnline(healthy);
-    };
-    check();
-    interval = setInterval(check, 15000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Load data from backend when online
   useEffect(() => {

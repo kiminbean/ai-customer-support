@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
+import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { BackendBadge } from "@/components/BackendBadge";
+import { useHealthCheck } from "@/hooks/useHealthCheck";
 import {
-  checkHealth,
   getDatahubDomains,
   getDatahubDatasets,
   searchDatahubDatasets,
@@ -17,164 +18,7 @@ import {
   type DatahubDataset,
   type DatahubImportedDataset,
 } from "@/lib/api";
-
-// ── Mock data (offline fallback) ──
-
-const MOCK_DOMAINS: DatahubDomain[] = [
-  { domain: "이커머스", count: 3, icon: "🛒", description: "이커머스 고객지원 데이터" },
-  { domain: "금융/은행", count: 1, icon: "🏦", description: "금융 고객상담 데이터" },
-  { domain: "종합/멀티도메인", count: 4, icon: "🌐", description: "다양한 도메인 통합 데이터" },
-  { domain: "SNS/소셜미디어", count: 2, icon: "📱", description: "소셜미디어 고객응대 데이터" },
-  { domain: "의료/헬스케어", count: 1, icon: "🏥", description: "의료/보험 상담 데이터" },
-  { domain: "IT/SaaS", count: 1, icon: "💻", description: "기술지원 대화 데이터" },
-];
-
-const MOCK_DATASETS: DatahubDataset[] = [
-  {
-    id: "bitext-customer-support",
-    name: "Bitext Customer Support",
-    description: "27개 의도(intent)를 포함한 이커머스 고객지원 대화 데이터셋. 다양한 표현 변형 포함.",
-    domain: "이커머스",
-    size: "~26K conversations",
-    language: "EN",
-    quality_score: 5,
-    format: "conversation",
-    use_cases: ["의도분류", "FAQ 자동응답", "챗봇 학습"],
-    status: "not_downloaded",
-  },
-  {
-    id: "oasst2-customer-support",
-    name: "OpenAssistant (CS subset)",
-    description: "오픈소스 어시스턴트 대화에서 고객지원 관련 대화만 추출한 데이터셋.",
-    domain: "종합/멀티도메인",
-    size: "~5K conversations",
-    language: "EN",
-    quality_score: 4,
-    format: "conversation",
-    use_cases: ["대화형 AI", "멀티턴 응답"],
-    status: "not_downloaded",
-  },
-  {
-    id: "amazon-qa",
-    name: "Amazon QA Dataset",
-    description: "아마존 상품 Q&A 데이터. 실제 고객 질문과 답변으로 구성.",
-    domain: "이커머스",
-    size: "~1.4M pairs",
-    language: "EN",
-    quality_score: 4,
-    format: "qa",
-    use_cases: ["상품 FAQ", "Q&A 매칭"],
-    status: "not_downloaded",
-  },
-  {
-    id: "tweet-customer-support",
-    name: "Customer Support on Twitter",
-    description: "트위터 상의 기업 고객지원 대화 모음. 다양한 브랜드의 실제 응대 패턴.",
-    domain: "SNS/소셜미디어",
-    size: "~3M tweets",
-    language: "EN",
-    quality_score: 3,
-    format: "tweet",
-    use_cases: ["SNS 응대", "톤 분석", "실시간 대응"],
-    status: "not_downloaded",
-  },
-  {
-    id: "financial-phrasebank",
-    name: "Financial PhraseBank",
-    description: "금융 뉴스에서 추출한 감성 분류 데이터. 금융 도메인 이해에 활용.",
-    domain: "금융/은행",
-    size: "~5K sentences",
-    language: "EN",
-    quality_score: 4,
-    format: "qa",
-    use_cases: ["감성분석", "금융상담"],
-    status: "not_downloaded",
-  },
-  {
-    id: "medical-dialog",
-    name: "Medical Dialog Dataset",
-    description: "의료 상담 대화 데이터. 환자-의사 간 Q&A 형식.",
-    domain: "의료/헬스케어",
-    size: "~200K dialogs",
-    language: "EN",
-    quality_score: 4,
-    format: "conversation",
-    use_cases: ["의료상담", "증상 분류"],
-    status: "not_downloaded",
-  },
-  {
-    id: "ubuntu-dialog-corpus",
-    name: "Ubuntu Dialogue Corpus",
-    description: "우분투 기술지원 IRC 채널의 대화 모음. IT 기술지원 패턴 학습에 적합.",
-    domain: "IT/SaaS",
-    size: "~930K dialogs",
-    language: "EN",
-    quality_score: 3,
-    format: "conversation",
-    use_cases: ["기술지원", "트러블슈팅"],
-    status: "not_downloaded",
-  },
-  {
-    id: "klue-nli",
-    name: "KLUE NLI (Korean)",
-    description: "한국어 자연어 추론 데이터셋. 한국어 이해 능력 강화에 활용.",
-    domain: "종합/멀티도메인",
-    size: "~30K pairs",
-    language: "KO",
-    quality_score: 5,
-    format: "qa",
-    use_cases: ["한국어 NLU", "의도 분류"],
-    status: "not_downloaded",
-  },
-  {
-    id: "korquad",
-    name: "KorQuAD 2.0",
-    description: "한국어 질의응답 데이터셋. 위키피디아 기반의 고품질 QA 쌍.",
-    domain: "종합/멀티도메인",
-    size: "~100K pairs",
-    language: "KO",
-    quality_score: 5,
-    format: "qa",
-    use_cases: ["질의응답", "문서 검색"],
-    status: "not_downloaded",
-  },
-  {
-    id: "tweet-sentiment-kr",
-    name: "Korean Tweet Sentiment",
-    description: "한국어 트윗 감성 분류 데이터. 고객 감정 분석에 활용.",
-    domain: "SNS/소셜미디어",
-    size: "~50K tweets",
-    language: "KO",
-    quality_score: 3,
-    format: "tweet",
-    use_cases: ["감성분석", "SNS 모니터링"],
-    status: "not_downloaded",
-  },
-  {
-    id: "e-commerce-faq-ko",
-    name: "이커머스 FAQ (Korean)",
-    description: "한국어 이커머스 FAQ 데이터. 배송, 반품, 교환 등 주요 문의 유형.",
-    domain: "이커머스",
-    size: "~8K pairs",
-    language: "KO",
-    quality_score: 4,
-    format: "qa",
-    use_cases: ["FAQ 봇", "자동 분류"],
-    status: "not_downloaded",
-  },
-  {
-    id: "multi-woz",
-    name: "MultiWOZ 2.4",
-    description: "멀티도메인 태스크 지향 대화 데이터셋. 호텔, 레스토랑, 기차 예약 등.",
-    domain: "종합/멀티도메인",
-    size: "~10K dialogs",
-    language: "EN",
-    quality_score: 5,
-    format: "conversation",
-    use_cases: ["태스크 대화", "슬롯 필링"],
-    status: "not_downloaded",
-  },
-];
+import { MOCK_DOMAINS, MOCK_DATASETS } from "@/data/mock-datasets";
 
 // ── Status helpers ──
 
@@ -208,18 +52,6 @@ function formatBadge(format?: string): string {
     case "tweet": return "🐦 트윗";
     default: return "📄 기타";
   }
-}
-
-// ── BackendBadge ──
-function BackendBadge({ online }: { online: boolean }) {
-  return (
-    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
-      online ? "bg-green-50 text-green-700" : "bg-red-50 text-red-500"
-    }`}>
-      <span className={`w-2 h-2 rounded-full ${online ? "bg-green-500 animate-pulse" : "bg-red-400"}`} />
-      {online ? "백엔드 연결됨" : "오프라인 (데모)"}
-    </div>
-  );
 }
 
 // ── Pipeline Visualization ──
@@ -432,7 +264,7 @@ function ImportStatsBar({ imported }: { imported: DatahubImportedDataset[] }) {
 
 // ── Main Page ──
 export default function DataHubPage() {
-  const [backendOnline, setBackendOnline] = useState(false);
+  const backendOnline = useHealthCheck();
   const [domains, setDomains] = useState<DatahubDomain[]>(MOCK_DOMAINS);
   const [datasets, setDatasets] = useState<(DatahubDataset & { _progress?: number })[]>(MOCK_DATASETS);
   const [imported, setImported] = useState<DatahubImportedDataset[]>([]);
@@ -442,17 +274,6 @@ export default function DataHubPage() {
   const [pipelineStep, setPipelineStep] = useState(-1);
   const [pipelineProgress, setPipelineProgress] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Health check
-  useEffect(() => {
-    const check = async () => {
-      const ok = await checkHealth();
-      setBackendOnline(ok);
-    };
-    check();
-    const interval = setInterval(check, 15000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Load from backend
   useEffect(() => {
@@ -695,64 +516,7 @@ export default function DataHubPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-100 min-h-screen flex flex-col">
-        <div className="p-4 border-b border-gray-100">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-gray-900">SupportAI</span>
-          </Link>
-        </div>
-        <nav className="flex-1 p-3">
-          <Link
-            href="/dashboard"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            대시보드
-          </Link>
-          <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-50 text-[#2563EB] mb-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            데이터 허브
-          </div>
-          <Link
-            href="/crawler"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-            웹 크롤러
-          </Link>
-          <Link
-            href="/dashboard"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            지식베이스
-          </Link>
-        </nav>
-        <div className="p-4 border-t border-gray-100 space-y-3">
-          <BackendBadge online={backendOnline} />
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">IB</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">관리자</div>
-              <div className="text-xs text-gray-400">Pro 플랜</div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <DashboardSidebar activePage="datahub" backendOnline={backendOnline} />
 
       {/* Main content */}
       <main className="flex-1 p-8 overflow-auto">
@@ -827,7 +591,7 @@ export default function DataHubPage() {
               </h3>
               <span className="text-xs text-gray-400">{filteredDisplay.length}개</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 scrollable-list">
               {filteredDisplay.length === 0 ? (
                 <div className="col-span-2 text-center py-12 text-gray-400 text-sm">
                   해당하는 데이터셋이 없습니다.

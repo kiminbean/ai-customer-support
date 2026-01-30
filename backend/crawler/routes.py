@@ -10,10 +10,13 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+import socket
 import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, HttpUrl
@@ -104,6 +107,7 @@ class CrawlJob:
 
 
 # 인메모리 작업 저장소
+_MAX_CRAWL_JOBS = 200
 _jobs: dict[str, CrawlJob] = {}
 
 
@@ -174,13 +178,25 @@ async def start_crawl(request: CrawlStartRequest, background_tasks: BackgroundTa
     URL을 받아 백그라운드에서 크롤링을 시작하고 job_id를 반환한다.
     데모 URL(demo, example)의 경우 즉시 데모 데이터를 반환한다.
     """
-    # URL 검증
     url = request.url.strip()
     if not url:
         raise HTTPException(status_code=400, detail="URL을 입력해 주세요.")
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
         request.url = url
+
+    # SSRF 방지: 내부 네트워크 URL 차단
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    try:
+        resolved_ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+        if resolved_ip.is_private or resolved_ip.is_loopback or resolved_ip.is_link_local:
+            raise HTTPException(
+                status_code=400,
+                detail="내부 네트워크 URL은 사용할 수 없습니다.",
+            )
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail=f"호스트를 찾을 수 없습니다: {hostname}")
 
     job_id = str(uuid.uuid4())[:8]
     job = CrawlJob(job_id=job_id, config=request)
@@ -201,6 +217,9 @@ async def start_crawl(request: CrawlStartRequest, background_tasks: BackgroundTa
         # 실제 크롤링 (백그라운드)
         background_tasks.add_task(_run_crawl, job)
 
+    if len(_jobs) >= _MAX_CRAWL_JOBS:
+        oldest_key = next(iter(_jobs))
+        del _jobs[oldest_key]
     _jobs[job_id] = job
 
     return {

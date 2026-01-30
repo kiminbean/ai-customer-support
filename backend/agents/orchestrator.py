@@ -17,6 +17,7 @@ from agents import faq_agent, order_agent, escalation_agent
 
 # ── 대화 메모리 (인메모리) ─────────────────────────────────
 
+_MAX_CONVERSATIONS = 1000
 _conversations: Dict[str, Dict] = {}
 
 
@@ -26,6 +27,9 @@ def _get_or_create_conversation(conversation_id: Optional[str] = None) -> Dict:
         return _conversations[conversation_id]
 
     conv_id = conversation_id or str(uuid.uuid4())
+    if len(_conversations) >= _MAX_CONVERSATIONS:
+        oldest_key = next(iter(_conversations))
+        del _conversations[oldest_key]
     conv = {
         "id": conv_id,
         "messages": [],

@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 import config
 
@@ -44,7 +47,8 @@ def _load_cache() -> None:
     if cache_file.exists():
         try:
             _cache = json.loads(cache_file.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            logger.warning("번역 캐시 로드 실패: %s", e)
             _cache = {}
 
     _cache_loaded = True
@@ -58,8 +62,8 @@ def _save_cache() -> None:
             json.dumps(_cache, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("번역 캐시 저장 실패: %s", e)
 
 
 def _cache_key(text: str) -> str:
@@ -149,16 +153,15 @@ def _translate_via_llm(text: str, source_lang: str, target_lang: str) -> Optiona
     if openai_key:
         try:
             return _translate_openai(text, source_lang, target_lang, openai_key)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("OpenAI 번역 실패: %s", e)
 
-    # Anthropic API 시도
     anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
     if anthropic_key:
         try:
             return _translate_anthropic(text, source_lang, target_lang, anthropic_key)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Anthropic 번역 실패: %s", e)
 
     return None
 

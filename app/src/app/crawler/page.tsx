@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
+import { useHealthCheck } from "@/hooks/useHealthCheck";
 import {
-  checkHealth,
   startCrawl,
   getCrawlStatus,
   getCrawlResults,
@@ -13,72 +12,15 @@ import {
   type CrawlResults,
   type CrawlJob,
 } from "@/lib/api";
-
-// ── Mock Data (offline fallback) ──
-
-const MOCK_CRAWL_RESULTS: CrawlResults = {
-  pages: 47,
-  faqs: [
-    { question: "배송은 얼마나 걸리나요?", answer: "일반배송 2-3일, 제주/도서산간 3-5일 소요됩니다.", sourceUrl: "https://example.com/faq" },
-    { question: "반품은 어떻게 하나요?", answer: "수령 후 7일 이내 마이페이지에서 반품 신청 가능합니다.", sourceUrl: "https://example.com/faq" },
-    { question: "교환 절차는 어떻게 되나요?", answer: "반품 신청 후 새 상품으로 재주문하거나, 고객센터에서 동일 상품 교환이 가능합니다.", sourceUrl: "https://example.com/faq" },
-    { question: "배송비는 얼마인가요?", answer: "3만원 이상 무료배송, 미만 시 3,000원 부과됩니다.", sourceUrl: "https://example.com/faq" },
-    { question: "주문 취소는 어떻게 하나요?", answer: "배송 준비 전까지 마이페이지에서 취소 가능합니다. 이후에는 고객센터로 연락해주세요.", sourceUrl: "https://example.com/faq" },
-    { question: "포인트는 어떻게 적립되나요?", answer: "구매 확정 시 결제금액의 1%가 자동 적립됩니다.", sourceUrl: "https://example.com/faq/point" },
-    { question: "회원 등급은 어떻게 올라가나요?", answer: "최근 6개월 구매금액에 따라 브론즈/실버/골드/VIP로 자동 변경됩니다.", sourceUrl: "https://example.com/faq/membership" },
-    { question: "쿠폰은 중복 사용이 가능한가요?", answer: "쿠폰은 주문 당 1개만 사용 가능합니다. 단, 적립금과는 중복 사용 가능합니다.", sourceUrl: "https://example.com/faq/coupon" },
-    { question: "해외 배송이 가능한가요?", answer: "현재 해외 배송은 지원하지 않습니다. 추후 서비스 예정입니다.", sourceUrl: "https://example.com/faq" },
-    { question: "결제 수단은 어떤 것이 있나요?", answer: "신용카드, 체크카드, 네이버페이, 카카오페이, 토스페이, 무통장입금을 지원합니다.", sourceUrl: "https://example.com/faq/payment" },
-    { question: "비회원 주문이 가능한가요?", answer: "네, 비회원 주문이 가능합니다. 단, 포인트 적립 및 회원 혜택은 제공되지 않습니다.", sourceUrl: "https://example.com/faq" },
-    { question: "영수증 발급은 어디서 하나요?", answer: "마이페이지 > 주문내역에서 전자영수증 출력이 가능합니다.", sourceUrl: "https://example.com/faq/receipt" },
-  ],
-  articles: [
-    { title: "회원가입 방법", content: "1. 홈페이지 우측 상단 '회원가입' 클릭\n2. 이메일 또는 소셜 계정으로 가입\n3. 본인인증 완료 후 가입 완료\n4. 가입 즉시 2,000원 쿠폰 발급", sourceUrl: "https://example.com/help/signup" },
-    { title: "주문 방법 안내", content: "상품 선택 → 장바구니 담기 → 주문서 작성 → 결제 완료. 주문 확인 이메일이 자동 발송됩니다.", sourceUrl: "https://example.com/help/order" },
-    { title: "배송 조회 방법", content: "마이페이지 > 주문내역에서 배송 상태를 확인할 수 있습니다. 운송장 번호 클릭 시 택배사 추적 페이지로 이동합니다.", sourceUrl: "https://example.com/help/delivery" },
-    { title: "비밀번호 재설정", content: "로그인 페이지에서 '비밀번호 찾기' 클릭 후, 가입 이메일로 재설정 링크가 발송됩니다.", sourceUrl: "https://example.com/help/password" },
-    { title: "앱 설치 안내", content: "앱스토어 또는 플레이스토어에서 'SupportAI Shop'을 검색하여 설치하세요. 앱 전용 할인 혜택이 제공됩니다.", sourceUrl: "https://example.com/help/app" },
-    { title: "포인트 사용 방법", content: "주문서 결제 단계에서 보유 포인트를 입력하여 사용할 수 있습니다. 최소 1,000포인트부터 사용 가능합니다.", sourceUrl: "https://example.com/help/point" },
-  ],
-  products: [
-    { name: "프리미엄 무선 이어폰 Pro", description: "노이즈 캔슬링, 48시간 배터리, IPX5 방수. 고해상도 오디오 코덱 지원.", sourceUrl: "https://example.com/product/earphone-pro" },
-    { name: "스마트 공기청정기 S200", description: "AI 자동 모드, HEPA 13 필터, 60평형 커버리지. 실시간 공기질 모니터링.", sourceUrl: "https://example.com/product/air-purifier" },
-    { name: "에르고 메시 의자 V3", description: "인체공학 설계, 메시 시트, 4D 팔걸이 조절. 허리 받침 높이 조절 가능.", sourceUrl: "https://example.com/product/ergo-chair" },
-    { name: "울트라 슬림 노트북 15", description: "14세대 i7, 16GB RAM, 512GB SSD, 1.2kg 초경량. 20시간 배터리.", sourceUrl: "https://example.com/product/laptop-15" },
-  ],
-  policies: [
-    { title: "개인정보 처리방침", content: "당사는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고 관련된 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보 처리방침을 수립·공개합니다.", sourceUrl: "https://example.com/policy/privacy" },
-    { title: "이용약관", content: "본 약관은 SupportAI Shop(이하 '회사')이 제공하는 온라인 쇼핑 서비스의 이용조건 및 절차에 관한 기본사항을 규정합니다.", sourceUrl: "https://example.com/policy/terms" },
-    { title: "반품/교환/환불 정책", content: "상품 수령 후 7일 이내 반품 가능. 고객 변심 시 배송비 부담. 상품 하자 시 무료 반품. 환불은 반품 완료 후 3영업일 이내 처리.", sourceUrl: "https://example.com/policy/return" },
-    { title: "배송 정책", content: "평일 오후 2시 이전 주문 시 당일 출고. 배송 소요일: 수도권 1-2일, 기타 지역 2-3일, 제주/도서산간 3-5일.", sourceUrl: "https://example.com/policy/shipping" },
-    { title: "포인트 정책", content: "구매 확정 시 결제금액의 1% 적립. 유효기간 12개월. 최소 사용 단위 1,000P. 탈퇴 시 소멸.", sourceUrl: "https://example.com/policy/point" },
-  ],
-};
-
-const MOCK_CRAWL_JOBS: CrawlJob[] = [
-  { job_id: "mock-1", url: "https://shop.example.com", status: "completed", created_at: "2025-01-15T09:30:00Z", pages_crawled: 47, items_found: 32 },
-  { job_id: "mock-2", url: "https://help.example.co.kr", status: "completed", created_at: "2025-01-14T14:20:00Z", pages_crawled: 23, items_found: 15 },
-  { job_id: "mock-3", url: "https://faq.mystore.com", status: "failed", created_at: "2025-01-13T11:00:00Z", pages_crawled: 3, items_found: 0 },
-];
-
-// ── Helper Components ──
-
-function BackendBadge({ online }: { online: boolean }) {
-  return (
-    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
-      online ? "bg-green-50 text-green-700" : "bg-red-50 text-red-500"
-    }`}>
-      <span className={`w-2 h-2 rounded-full ${online ? "bg-green-500 animate-pulse" : "bg-red-400"}`} />
-      {online ? "백엔드 연결됨" : "오프라인 (데모)"}
-    </div>
-  );
-}
+import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { BackendBadge } from "@/components/BackendBadge";
+import { MOCK_CRAWL_RESULTS, MOCK_CRAWL_JOBS } from "@/data/mock-crawl";
 
 type ResultTab = "faqs" | "articles" | "products" | "policies";
 
 // ── Main Page ──
 export default function CrawlerPage() {
-  const [backendOnline, setBackendOnline] = useState(false);
+  const backendOnline = useHealthCheck();
 
   // Input state
   const [url, setUrl] = useState("");
@@ -112,17 +54,6 @@ export default function CrawlerPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  // Health check
-  useEffect(() => {
-    const check = async () => {
-      const ok = await checkHealth();
-      setBackendOnline(ok);
-    };
-    check();
-    const interval = setInterval(check, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
   // Load jobs
   useEffect(() => {
     (async () => {
@@ -151,15 +82,21 @@ export default function CrawlerPage() {
 
   // Toggle select all for current tab
   useEffect(() => {
-    if (!results) return;
-    const items = getTabItems();
-    if (selectAll) {
-      const newSel = new Set(selectedItems);
-      items.forEach((_, i) => newSel.add(`${activeTab}-${i}`));
-      setSelectedItems(newSel);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectAll, activeTab]);
+    if (!results || !selectAll) return;
+    const items = (() => {
+      switch (activeTab) {
+        case "faqs": return results.faqs;
+        case "articles": return results.articles;
+        case "products": return results.products;
+        case "policies": return results.policies;
+      }
+    })();
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      items.forEach((_, i) => next.add(`${activeTab}-${i}`));
+      return next;
+    });
+  }, [selectAll, activeTab, results]);
 
   function getTabItems() {
     if (!results) return [];
@@ -372,64 +309,7 @@ export default function CrawlerPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-100 min-h-screen flex flex-col">
-        <div className="p-4 border-b border-gray-100">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-gray-900">SupportAI</span>
-          </Link>
-        </div>
-        <nav className="flex-1 p-3">
-          <Link
-            href="/dashboard"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            대시보드
-          </Link>
-          <Link
-            href="/datahub"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            데이터 허브
-          </Link>
-          <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-50 text-[#2563EB] mb-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-            웹 크롤러
-          </div>
-          <Link
-            href="/dashboard"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            지식베이스
-          </Link>
-        </nav>
-        <div className="p-4 border-t border-gray-100 space-y-3">
-          <BackendBadge online={backendOnline} />
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">IB</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">관리자</div>
-              <div className="text-xs text-gray-400">Pro 플랜</div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <DashboardSidebar activePage="crawler" backendOnline={backendOnline} />
 
       {/* Main content */}
       <main className="flex-1 p-8 overflow-auto">
@@ -465,10 +345,12 @@ export default function CrawlerPage() {
               >
                 {crawling ? (
                   <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <span className="w-4 h-4 animate-spin">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    </span>
                     크롤링 중...
                   </span>
                 ) : (
@@ -595,16 +477,18 @@ export default function CrawlerPage() {
               {/* Current URL */}
               {currentUrl && (
                 <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg overflow-hidden">
-                  <svg className="w-3.5 h-3.5 shrink-0 animate-spin text-[#2563EB]" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <span className="w-3.5 h-3.5 shrink-0 animate-spin text-[#2563EB]">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  </span>
                   <span className="truncate">{currentUrl}</span>
                 </div>
               )}
 
               {/* Live log */}
-              <div className="bg-gray-900 rounded-xl p-4 max-h-48 overflow-y-auto font-mono text-xs">
+              <div className="bg-gray-900 rounded-xl p-4 max-h-48 overflow-y-auto font-mono text-xs scrollable-list">
                 {logs.map((log, i) => (
                   <div key={i} className={`py-0.5 ${log.includes("✅") ? "text-green-400" : log.includes("❌") || log.includes("🚫") ? "text-red-400" : log.includes("🎉") ? "text-yellow-300" : "text-gray-400"}`}>
                     {log}
@@ -682,7 +566,7 @@ export default function CrawlerPage() {
                 </div>
 
                 {/* Tab content */}
-                <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+                <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto scrollable-list">
                   {activeTab === "faqs" && results.faqs.map((faq, i) => (
                     <div
                       key={i}

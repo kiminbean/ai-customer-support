@@ -51,7 +51,14 @@ export async function sendMessage(message: string, conversationId?: string): Pro
   return res.json();
 }
 
-export async function uploadDocument(file: File): Promise<Document> {
+export interface UploadResponse {
+  status: string;
+  filename: string;
+  chunks_created: number;
+  message: string;
+}
+
+export async function uploadDocument(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append('file', file);
   const res = await fetch(`${API_BASE}/api/documents/upload`, {

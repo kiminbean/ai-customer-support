@@ -7,7 +7,6 @@ RAG + Deep Agents 기반 지능형 고객지원 시스템
 
 from __future__ import annotations
 
-import shutil
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -27,6 +26,7 @@ from agents.orchestrator import (
 from crawler.routes import router as crawler_router
 from rag.document_loader import delete_document, list_documents, load_file, load_sample_docs
 from datahub.routes import router as datahub_router
+from voice.routes import router as voice_router
 
 # ── FastAPI 앱 ─────────────────────────────────────────────
 
@@ -50,6 +50,9 @@ app.add_middleware(
 
 # 데이터 허브 라우터 등록
 app.include_router(datahub_router)
+
+# 음성 라우터 등록
+app.include_router(voice_router)
 
 
 # ── Pydantic 모델 ─────────────────────────────────────────
@@ -137,8 +140,14 @@ async def upload_document(file: UploadFile = File(...)):
             detail=f"지원하지 않는 파일 형식: {suffix}. (.txt, .md, .pdf만 가능)",
         )
 
-    # 파일 저장
-    save_path = config.UPLOAD_DIR / (file.filename or f"upload_{uuid.uuid4()}{suffix}")
+    # 파일명 sanitize (경로 순회 방지)
+    safe_name = Path(file.filename or "").name  # 디렉토리 성분 제거
+    if not safe_name:
+        safe_name = f"upload_{uuid.uuid4()}{suffix}"
+    save_path = config.UPLOAD_DIR / safe_name
+    if not save_path.resolve().is_relative_to(config.UPLOAD_DIR.resolve()):
+        raise HTTPException(status_code=400, detail="잘못된 파일명입니다.")
+
     with open(save_path, "wb") as f:
         content = await file.read()
         f.write(content)
@@ -213,6 +222,12 @@ async def analytics():
 async def update_settings(settings: SettingsRequest):
     """AI 설정 변경 (모델, 온도, 톤 등)"""
     if settings.model_name:
+        if settings.model_name not in config.ALLOWED_MODELS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"지원하지 않는 모델입니다: {settings.model_name}. "
+                       f"허용 모델: {', '.join(sorted(config.ALLOWED_MODELS))}",
+            )
         config.MODEL_NAME = settings.model_name
     if settings.temperature is not None:
         config.TEMPERATURE = max(0.0, min(2.0, settings.temperature))

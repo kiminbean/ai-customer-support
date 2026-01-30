@@ -10,9 +10,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 import config
 from datahub.downloader import get_downloaded_data
@@ -467,8 +470,8 @@ def _translate_pairs(pairs: List[QAPair]) -> List[QAPair]:
                 metadata=t_dict.get("metadata", {}),
             ))
         return result
-    except Exception:
-        # 번역 실패 시 원본 반환
+    except Exception as e:
+        logger.warning("번역 실패, 원본 반환: %s", e)
         return pairs
 
 
@@ -510,7 +513,8 @@ def get_processed_data(dataset_id: str) -> Optional[List[Dict]]:
     if json_path.exists():
         try:
             return json.loads(json_path.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            logger.warning("처리된 데이터 로드 실패 (%s): %s", dataset_id, e)
             return None
     return None
 
@@ -522,6 +526,7 @@ def get_process_metadata(dataset_id: str) -> Optional[Dict]:
     if meta_path.exists():
         try:
             return json.loads(meta_path.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            logger.warning("메타데이터 로드 실패 (%s): %s", dataset_id, e)
             return None
     return None

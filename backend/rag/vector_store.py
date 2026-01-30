@@ -7,9 +7,12 @@ scikit-learn TF-IDF + 코사인 유사도 기반.
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -170,8 +173,8 @@ class InMemoryVectorStore:
                 json.dumps(data, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-        except Exception:
-            pass  # 저장 실패 시 무시
+        except Exception as e:
+            logger.warning("벡터 스토어 저장 실패: %s", e)
 
     def _load(self):
         """JSON에서 로드"""
@@ -180,8 +183,8 @@ class InMemoryVectorStore:
                 data = json.loads(self._persist_path.read_text(encoding="utf-8"))
                 self._documents = data
                 self._rebuild_index()
-        except Exception:
-            pass  # 로드 실패 시 빈 스토어로 시작
+        except Exception as e:
+            logger.warning("벡터 스토어 로드 실패 (빈 스토어로 시작): %s", e)
 
 
 # ── 싱글턴 인스턴스 ────────────────────────────────────────

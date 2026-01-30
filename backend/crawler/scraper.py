@@ -22,8 +22,14 @@ from typing import Callable, Optional
 from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
 
+import logging
+
 import httpx
 from bs4 import BeautifulSoup
+
+import config as _cfg
+
+logger = logging.getLogger(__name__)
 
 
 # ── 데이터 모델 ────────────────────────────────────────────
@@ -110,7 +116,7 @@ class WebCrawler:
             headers={"User-Agent": self.config.user_agent},
             timeout=httpx.Timeout(self.config.timeout),
             follow_redirects=True,
-            verify=False,  # 자체 서명 인증서 허용
+            verify=not getattr(_cfg, "DEMO_MODE", False),
         ) as client:
             while self.queue and len(self.pages) < self.config.max_pages:
                 url, depth = self.queue.pop(0)
@@ -153,14 +159,14 @@ class WebCrawler:
             async with httpx.AsyncClient(
                 headers={"User-Agent": self.config.user_agent},
                 timeout=httpx.Timeout(5.0),
-                verify=False,
+                verify=not getattr(_cfg, "DEMO_MODE", False),
             ) as client:
                 resp = await client.get(robots_url)
                 if resp.status_code == 200:
                     self.robot_parser = RobotFileParser()
                     self.robot_parser.parse(resp.text.splitlines())
-        except Exception:
-            # robots.txt를 가져올 수 없으면 모두 허용
+        except Exception as e:
+            logger.debug("robots.txt 로드 실패 (모두 허용): %s", e)
             self.robot_parser = None
 
     def _is_allowed(self, url: str) -> bool:
@@ -176,8 +182,8 @@ class WebCrawler:
             try:
                 if not self.robot_parser.can_fetch(self.config.user_agent, url):
                     return False
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("robots.txt 체크 실패 (%s): %s", url, e)
 
         path = parsed.path.lower()
 

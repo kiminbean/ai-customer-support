@@ -3,6 +3,8 @@
 데모 모드: OPENAI_API_KEY 미설정 시 자동 전환
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -10,11 +12,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 SAMPLE_DOCS_DIR = DATA_DIR / "sample_docs"
-CHROMA_DB_DIR = DATA_DIR / "chroma_db"
 UPLOAD_DIR = DATA_DIR / "uploads"
 
 # 디렉토리 자동 생성
-for d in [DATA_DIR, SAMPLE_DOCS_DIR, CHROMA_DB_DIR, UPLOAD_DIR]:
+for d in [DATA_DIR, SAMPLE_DOCS_DIR, UPLOAD_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 # ── OpenAI 설정 ────────────────────────────────────────────
@@ -35,7 +36,18 @@ MIN_SIMILARITY = 0.3
 # ── 앱 설정 ────────────────────────────────────────────────
 APP_TITLE = "AI 고객지원 플랫폼"
 APP_VERSION = "1.0.0"
-CORS_ORIGINS = ["http://localhost:3000", "http://localhost:3001", "*"]
+CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    # 프로덕션 배포 시 실제 도메인 추가
+]
+
+# ── 모델 허용 목록 ───────────────────────────────────────
+ALLOWED_MODELS = {
+    "gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-4-turbo",
+    "gpt-3.5-turbo", "gpt-3.5-turbo-16k",
+}
+
 
 def get_settings_dict() -> dict:
     """현재 설정을 딕셔너리로 반환"""

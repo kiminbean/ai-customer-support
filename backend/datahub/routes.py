@@ -10,6 +10,7 @@ from __future__ import annotations
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -35,52 +36,60 @@ router = APIRouter(prefix="/api/datahub", tags=["데이터 허브"])
 
 # ── 인메모리 잡 스토어 ────────────────────────────────────
 
-_jobs: Dict[str, Dict[str, Any]] = {}
+_MAX_JOBS = 500
+_jobs: Dict[str, Dict[str, Any]] = OrderedDict()
+_jobs_lock = threading.Lock()
 
 
 def _create_job(job_type: str, dataset_id: str) -> str:
     """새로운 비동기 작업을 생성한다."""
     job_id = str(uuid.uuid4())
-    _jobs[job_id] = {
-        "job_id": job_id,
-        "type": job_type,
-        "dataset_id": dataset_id,
-        "status": "pending",
-        "progress": 0.0,
-        "message": "대기 중...",
-        "result": None,
-        "error": None,
-        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "completed_at": None,
-    }
+    with _jobs_lock:
+        if len(_jobs) >= _MAX_JOBS:
+            _jobs.popitem(last=False)
+        _jobs[job_id] = {
+            "job_id": job_id,
+            "type": job_type,
+            "dataset_id": dataset_id,
+            "status": "pending",
+            "progress": 0.0,
+            "message": "대기 중...",
+            "result": None,
+            "error": None,
+            "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "completed_at": None,
+        }
     return job_id
 
 
 def _update_job(job_id: str, message: str, progress: float) -> None:
     """작업 진행 상태를 업데이트한다."""
-    if job_id in _jobs:
-        _jobs[job_id]["status"] = "running"
-        _jobs[job_id]["message"] = message
-        _jobs[job_id]["progress"] = min(progress, 1.0)
+    with _jobs_lock:
+        if job_id in _jobs:
+            _jobs[job_id]["status"] = "running"
+            _jobs[job_id]["message"] = message
+            _jobs[job_id]["progress"] = min(progress, 1.0)
 
 
 def _complete_job(job_id: str, result: Dict) -> None:
     """작업을 완료 처리한다."""
-    if job_id in _jobs:
-        _jobs[job_id]["status"] = "completed"
-        _jobs[job_id]["progress"] = 1.0
-        _jobs[job_id]["message"] = "완료"
-        _jobs[job_id]["result"] = result
-        _jobs[job_id]["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    with _jobs_lock:
+        if job_id in _jobs:
+            _jobs[job_id]["status"] = "completed"
+            _jobs[job_id]["progress"] = 1.0
+            _jobs[job_id]["message"] = "완료"
+            _jobs[job_id]["result"] = result
+            _jobs[job_id]["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _fail_job(job_id: str, error: str) -> None:
     """작업을 실패 처리한다."""
-    if job_id in _jobs:
-        _jobs[job_id]["status"] = "failed"
-        _jobs[job_id]["error"] = error
-        _jobs[job_id]["message"] = f"실패: {error}"
-        _jobs[job_id]["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    with _jobs_lock:
+        if job_id in _jobs:
+            _jobs[job_id]["status"] = "failed"
+            _jobs[job_id]["error"] = error
+            _jobs[job_id]["message"] = f"실패: {error}"
+            _jobs[job_id]["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
 
 # ── Pydantic 요청/응답 모델 ───────────────────────────────

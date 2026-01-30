@@ -98,8 +98,11 @@ async def upload_audio(
     # 작업 생성
     job = _processor.create_job(source_file=file.filename)
 
-    # 파일 저장
-    save_path = UPLOAD_DIR / f"{job.job_id}_{file.filename}"
+    # 파일명 sanitize (경로 순회 방지)
+    safe_filename = Path(file.filename).name  # 디렉토리 성분 제거
+    save_path = UPLOAD_DIR / f"{job.job_id}_{safe_filename}"
+    if not save_path.resolve().is_relative_to(UPLOAD_DIR.resolve()):
+        raise HTTPException(status_code=400, detail="잘못된 파일명입니다.")
     try:
         with open(save_path, "wb") as f:
             content = await file.read()
