@@ -2,12 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { sendMessage as apiSendMessage, checkHealth, type ChatResponse } from "@/lib/api";
 
 interface Message {
   id: string;
   role: "user" | "bot";
   text: string;
   timestamp: Date;
+  agentType?: string;
+  confidence?: number;
+  sources?: { title: string; content?: string; score?: number }[];
 }
 
 const FAQ_RESPONSES: Record<string, string> = {
@@ -28,7 +32,6 @@ function findBestResponse(input: string): string {
       return response;
     }
   }
-  // Check common greetings
   if (lower.match(/안녕|반가|hello|hi |헬로/)) {
     return "안녕하세요! 👋 SupportAI 고객지원 봇입니다. 무엇을 도와드릴까요?\n\n자주 묻는 질문:\n• 배송 조회\n• 반품/교환\n• 결제 문의\n• 쿠폰/포인트\n• 회원가입\n\n위 키워드를 입력하시거나, 궁금하신 내용을 자유롭게 질문해주세요!";
   }
@@ -45,6 +48,69 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 }
 
+function getAgentBadge(agentType?: string) {
+  switch (agentType) {
+    case "faq":
+      return { label: "🔍 FAQ 에이전트", color: "bg-blue-50 text-blue-700 border-blue-200" };
+    case "order":
+      return { label: "📦 주문조회 에이전트", color: "bg-green-50 text-green-700 border-green-200" };
+    case "escalation":
+      return { label: "👤 상담원 연결", color: "bg-orange-50 text-orange-700 border-orange-200" };
+    default:
+      return null;
+  }
+}
+
+function getConfidenceInfo(confidence?: number) {
+  if (confidence === undefined || confidence === null) return null;
+  if (confidence >= 0.8) return { label: "높음", color: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-100" };
+  if (confidence >= 0.5) return { label: "중간", color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-100" };
+  return { label: "낮음", color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-100" };
+}
+
+function SourceDocuments({ sources }: { sources: { title: string; content?: string; score?: number }[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-800 transition-colors font-medium"
+      >
+        <svg
+          className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+        📄 참고 문서 ({sources.length})
+      </button>
+      {expanded && (
+        <div className="mt-1.5 space-y-1.5 animate-fade-in-up">
+          {sources.map((src, idx) => (
+            <div
+              key={idx}
+              className="px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100 text-[11px]"
+            >
+              <div className="font-medium text-blue-800">{src.title}</div>
+              {src.content && (
+                <div className="text-blue-600 mt-0.5 line-clamp-2">{src.content}</div>
+              )}
+              {src.score !== undefined && (
+                <div className="text-blue-400 mt-0.5">관련도: {Math.round(src.score * 100)}%</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DemoPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -56,6 +122,8 @@ export default function DemoPage() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [backendOnline, setBackendOnline] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,7 +135,19 @@ export default function DemoPage() {
     scrollToBottom();
   }, [messages, isTyping, scrollToBottom]);
 
-  const sendMessage = async () => {
+  // Check backend health on mount and periodically
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    const check = async () => {
+      const healthy = await checkHealth();
+      setBackendOnline(healthy);
+    };
+    check();
+    interval = setInterval(check, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = {
@@ -78,19 +158,49 @@ export default function DemoPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageText = input.trim();
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 1200));
+    let botMessage: Message;
 
-    const responseText = findBestResponse(userMessage.text);
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "bot",
-      text: responseText,
-      timestamp: new Date(),
-    };
+    if (backendOnline) {
+      try {
+        const data: ChatResponse = await apiSendMessage(messageText, conversationId);
+        if (data.conversation_id) {
+          setConversationId(data.conversation_id);
+        }
+        botMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          text: data.response,
+          timestamp: new Date(),
+          agentType: data.agent_type,
+          confidence: data.confidence,
+          sources: data.sources,
+        };
+      } catch {
+        // Fallback to local mock
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        const responseText = findBestResponse(messageText);
+        botMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          text: responseText,
+          timestamp: new Date(),
+        };
+      }
+    } else {
+      // Local mock mode
+      await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 1200));
+      const responseText = findBestResponse(messageText);
+      botMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "bot",
+        text: responseText,
+        timestamp: new Date(),
+      };
+    }
 
     setIsTyping(false);
     setMessages((prev) => [...prev, botMessage]);
@@ -113,8 +223,16 @@ export default function DemoPage() {
               </div>
               <span className="text-lg font-bold text-gray-900">SupportAI</span>
             </Link>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">데모 모드</span>
+            <div className="flex items-center gap-3">
+              {/* Backend status indicator */}
+              <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
+                backendOnline
+                  ? "bg-green-50 text-green-700"
+                  : "bg-gray-100 text-gray-400"
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${backendOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
+                {backendOnline ? "AI 백엔드 연결됨" : "데모 모드"}
+              </span>
               <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← 홈으로</Link>
             </div>
           </div>
@@ -124,7 +242,11 @@ export default function DemoPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">AI 채팅 데모</h1>
-          <p className="text-sm text-gray-500 mt-1">실시간 AI 고객지원 체험 — 이커머스 시나리오</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {backendOnline
+              ? "🟢 AI 백엔드에 연결되었습니다 — 실시간 RAG 기반 응답"
+              : "실시간 AI 고객지원 체험 — 이커머스 시나리오"}
+          </p>
         </div>
 
         {/* Chat container */}
@@ -139,8 +261,10 @@ export default function DemoPage() {
             <div>
               <h3 className="text-white font-semibold text-sm">SupportAI 봇</h3>
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-green-400 rounded-full" />
-                <span className="text-blue-100 text-xs">온라인 · 평균 응답 0.3초</span>
+                <span className={`w-2 h-2 rounded-full ${backendOnline ? "bg-green-400" : "bg-yellow-400"}`} />
+                <span className="text-blue-100 text-xs">
+                  {backendOnline ? "온라인 · AI 백엔드 연결됨" : "온라인 · 로컬 데모 모드"}
+                </span>
               </div>
             </div>
           </div>
@@ -169,6 +293,32 @@ export default function DemoPage() {
                   >
                     {msg.text}
                   </div>
+                  {/* Agent badge + confidence for bot messages */}
+                  {msg.role === "bot" && (msg.agentType || msg.confidence !== undefined) && (
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {(() => {
+                        const badge = getAgentBadge(msg.agentType);
+                        return badge ? (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        ) : null;
+                      })()}
+                      {(() => {
+                        const conf = getConfidenceInfo(msg.confidence);
+                        return conf ? (
+                          <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${conf.bgColor} ${conf.textColor}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${conf.color}`} />
+                            신뢰도: {conf.label} ({Math.round((msg.confidence ?? 0) * 100)}%)
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                  {/* Source documents */}
+                  {msg.role === "bot" && msg.sources && msg.sources.length > 0 && (
+                    <SourceDocuments sources={msg.sources} />
+                  )}
                   <span className={`text-[10px] text-gray-400 mt-1 block ${msg.role === "user" ? "text-right" : "text-left"}`}>
                     {formatTime(msg.timestamp)}
                   </span>
@@ -222,7 +372,7 @@ export default function DemoPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                sendMessage();
+                handleSend();
               }}
               className="flex gap-2"
             >
