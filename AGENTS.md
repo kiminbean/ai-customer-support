@@ -1,6 +1,6 @@
 # AI Customer Support Platform — Agent Context
 
-**Generated:** 2026-01-30 | **Commit:** c6d3b1e | **Branch:** main
+**Generated:** 2026-01-31 | **Commit:** 9f8219e | **Branch:** main
 
 ## Overview
 
@@ -11,31 +11,43 @@ All features work in demo mode without API keys. Korean-first UX.
 
 ```
 app/                     # Next.js 16, React 19, Tailwind v4, TypeScript
-  src/app/               # App Router pages (landing, demo, dashboard, datahub, crawler, widget)
+  src/app/               # App Router pages
+    (admin)/             # Route group: dashboard, datahub, crawler, voice (shared sidebar layout)
+    page.tsx             # Landing page
+    demo/page.tsx        # Chat demo
+    widget/page.tsx      # Embeddable widget preview + iframe mode
+  src/components/        # Shared components: Navbar, DashboardSidebar, icons, BackendBadge
+  src/hooks/             # Custom hooks: useHealthCheck
   src/lib/api.ts         # Typed fetch wrappers for ALL backend endpoints
+  public/widget.js       # Embeddable chat widget (vanilla JS IIFE, <5KB)
 backend/                 # FastAPI, Python 3.14, Pydantic v2
-  main.py                # App entry + route registration + Pydantic models
+  main.py                # App entry + route registration + Pydantic models + middleware stack
   config.py              # ALL config (env vars, paths, model settings, RAG params)
+  auth.py                # API Key authentication middleware
+  database.py            # SQLite persistence layer (async, aiosqlite)
+  logging_config.py      # Structured JSON logging setup
+  middleware.py           # Correlation ID middleware
   agents/                # Deep Agent pattern: orchestrator → sub-agents
-  rag/                   # RAG pipeline: loader → embeddings → vector_store → retriever
+  rag/                   # RAG pipeline: loader → vector_store → retriever
   crawler/               # Web scraping → content extraction → RAG documents
   datahub/               # HuggingFace dataset browse/download/process/import
   voice/                 # Audio → STT → Q&A document generation
-  tests/test_api.py      # Integration tests (FastAPI TestClient)
-  data/                  # Runtime: chroma_db, uploads, sample_docs (resets on restart)
+  tests/                 # Integration tests: test_api (18), test_crawler (30), test_datahub (33), test_voice (12)
+  data/                  # Runtime: vector_store.json, uploads, sample_docs, app.db
+Dockerfile               # Multi-stage Python backend image
+docker-compose.yml       # Full stack: backend (8000) + frontend (3000)
+.github/workflows/ci.yml # GitHub Actions: lint + test + build
 ```
 
 ## Commands
 
 ### Backend (working directory: `backend/`)
 ```bash
-source venv/bin/activate          # Python 3.14 venv
-uvicorn main:app --reload --port 8000  # Dev server
-pytest                            # All tests
-pytest tests/test_api.py          # Single file
-pytest tests/test_api.py::test_health  # Single test
-pytest -v -s                      # Verbose with stdout
-pip install -r requirements.txt   # Install deps
+source venv/bin/activate
+uvicorn main:app --reload --port 8000
+pytest                               # All 93 tests
+pytest tests/test_api.py             # API tests only (18)
+pytest tests/ -v --cov=. --cov-report=term-missing  # Coverage
 ```
 
 ### Frontend (working directory: `app/`)
@@ -43,7 +55,13 @@ pip install -r requirements.txt   # Install deps
 npm run dev       # Dev server (port 3000)
 npm run build     # Production build
 npm start         # Production server
-npm install       # Install deps
+```
+
+### Docker
+```bash
+docker compose up -d      # Start both services
+docker compose down        # Stop
+docker compose logs -f     # Watch logs
 ```
 
 ### Full Stack
@@ -64,7 +82,12 @@ main.py ──→ agents/orchestrator ──→ agents/{faq_agent, order_agent, 
    ├──→ datahub/routes ──→ datahub/{registry, downloader, processor, translator}
    │                       └──→ rag/document_loader (import to knowledge base)
    │
-   └──→ voice/routes ──→ voice/{processor, transcriber, document_generator, demo}
+   ├──→ voice/routes ──→ voice/{processor, transcriber, document_generator, demo}
+   │
+   ├──→ auth.py (API Key middleware)
+   ├──→ database.py (SQLite via aiosqlite)
+   ├──→ logging_config.py (JSON structured logging)
+   └──→ middleware.py (correlation IDs)
 
 config.py ← imported by ALL backend modules
 ```
@@ -81,7 +104,7 @@ config.py ← imported by ALL backend modules
 - Config: All in `config.py` as module-level vars. `os.getenv()` with defaults.
 - Errors: `HTTPException` with Korean messages. Catch specific exceptions.
 - Models: Pydantic models defined IN the route file that uses them
-- Storage: In-memory dicts (`_store: Dict[str, T] = {}`). Singleton pattern via `get_X()` functions.
+- Storage: SQLite for persistence (`database.py`), in-memory dicts for transient job state
 - Demo mode: `config.DEMO_MODE` check → keyword-matched fallback responses
 
 ### TypeScript (Frontend)
@@ -89,7 +112,7 @@ config.py ← imported by ALL backend modules
 - `import type { X }` for type-only imports. Named exports.
 - `interface` not `type` for object shapes. PascalCase.
 - `camelCase` functions. `async/await`. Error: `if (!res.ok) throw new Error(...)`
-- Components: PascalCase functions, defined in page file (no separate component files)
+- Shared components in `src/components/`. Page-specific components inline.
 - `"use client"` only when needed
 - Styling: Tailwind v4 inline. Brand: `#2563EB`. CSS vars in `globals.css`.
 - TypeScript `strict: true`. No `as any`, no `@ts-ignore`.
@@ -98,9 +121,10 @@ config.py ← imported by ALL backend modules
 
 1. **Demo mode always works** — Every feature functions without OPENAI_API_KEY
 2. **Korean-first UX** — All user-facing strings, errors, docstrings in Korean
-3. **No external DB** — In-memory storage (MVP phase). Data resets on restart.
-4. **API contract** — All endpoints under `/api/`. Consistent response shapes.
-5. **No linting config** — No eslint/prettier/pyproject.toml. Rely on TypeScript strict + conventions.
+3. **SQLite persistence** — `backend/data/app.db` via `database.py`. No external DB.
+4. **API Key auth** — `X-API-Key` header. Empty = demo mode (no auth required).
+5. **API contract** — All endpoints under `/api/`. Paginated lists include `total`, `page`, `limit`.
+6. **No linting config** — No eslint/prettier/pyproject.toml. Rely on TypeScript strict + conventions.
 
 ## Do's and Don'ts
 
@@ -109,7 +133,7 @@ config.py ← imported by ALL backend modules
 - DO define Pydantic models near their route handlers
 - DO use section separator comments (`# ── ... ──`) in Python files
 - DO use `API_BASE` from `lib/api.ts` for all frontend API calls
-- DON'T add database migrations (in-memory storage phase)
+- DO add new admin pages under `app/src/app/(admin)/` route group
 - DON'T use relative imports in backend Python code
 - DON'T install deps without updating `requirements.txt`
 - DON'T suppress TypeScript errors with `as any` or `@ts-ignore`
@@ -118,8 +142,8 @@ config.py ← imported by ALL backend modules
 ## Git
 
 - Branch: `main`
-- Commit style: Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`)
-- `.gitignore` only excludes `__pycache__/` — `venv/` and `node_modules/` are NOT gitignored
+- Commit style: Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`, `perf:`)
+- `.gitignore` excludes: `__pycache__/`, `*.pyc`, `*.pyo`, `.env`, `*.db`, `venv/`, `node_modules/`, `.next/`, IDE files
 
 ## Where to Look
 
@@ -128,11 +152,15 @@ config.py ← imported by ALL backend modules
 | Add API endpoint | `backend/main.py` or new `{module}/routes.py` | Register router in main.py |
 | Add agent behavior | `backend/agents/` | Follow orchestrator routing pattern |
 | Modify RAG pipeline | `backend/rag/` | vector_store is singleton via `get_store()` |
-| Add frontend page | `app/src/app/{name}/page.tsx` | App Router convention |
+| Add admin page | `app/src/app/(admin)/{name}/page.tsx` | Uses shared sidebar layout |
+| Add public page | `app/src/app/{name}/page.tsx` | Uses Navbar component |
 | Add API client method | `app/src/lib/api.ts` | All backend calls go here |
+| Add shared component | `app/src/components/` | Navbar, DashboardSidebar, icons |
 | Change AI settings | `backend/config.py` | Module-level vars, runtime-mutable |
-| Add test | `backend/tests/test_api.py` | Uses FastAPI TestClient |
+| Add test | `backend/tests/test_{module}.py` | Uses FastAPI TestClient |
 | Styling/theme | `app/src/app/globals.css` | CSS custom properties + animations |
+| Infrastructure | `Dockerfile`, `docker-compose.yml` | Multi-stage build |
+| CI/CD | `.github/workflows/ci.yml` | pytest + npm build |
 
 ## Context Map
 

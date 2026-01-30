@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import AsyncIterator, List, Optional
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -22,6 +22,8 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
+from starlette.responses import Response
 
 import config
 from agents.orchestrator import (
@@ -101,6 +103,7 @@ app.include_router(voice_router)
 app.add_middleware(BaseHTTPMiddleware, dispatch=api_key_auth_middleware)
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
@@ -212,12 +215,24 @@ async def upload_document(request: Request, file: UploadFile = File(...)):
 
 # 3. 문서 목록
 @app.get("/api/documents")
-async def get_documents():
-    """업로드된 문서 목록 조회"""
+async def get_documents(
+    response: Response,
+    page: int = Query(1, ge=1, description="페이지 번호"),
+    limit: int = Query(50, ge=1, le=200, description="페이지당 항목 수"),
+):
+    """업로드된 문서 목록 조회 (페이지네이션 지원)"""
     docs = list_documents()
+    total = len(docs)
+    start = (page - 1) * limit
+    end = start + limit
+    paginated = docs[start:end]
+    response.headers["Cache-Control"] = "public, max-age=30"
     return {
-        "documents": docs,
-        "total": len(docs),
+        "documents": paginated,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total + limit - 1) // limit if total > 0 else 1,
     }
 
 
@@ -234,12 +249,24 @@ async def remove_document(doc_id: str):
 
 # 5. 대화 목록
 @app.get("/api/conversations")
-async def get_conversations():
-    """대화 목록 조회"""
+async def get_conversations(
+    response: Response,
+    page: int = Query(1, ge=1, description="페이지 번호"),
+    limit: int = Query(20, ge=1, le=100, description="페이지당 항목 수"),
+):
+    """대화 목록 조회 (페이지네이션 지원)"""
     convs = list_conversations()
+    total = len(convs)
+    start = (page - 1) * limit
+    end = start + limit
+    paginated = convs[start:end]
+    response.headers["Cache-Control"] = "public, max-age=15"
     return {
-        "conversations": convs,
-        "total": len(convs),
+        "conversations": paginated,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total + limit - 1) // limit if total > 0 else 1,
     }
 
 
@@ -255,8 +282,9 @@ async def get_conversation_detail(conv_id: str):
 
 # 7. 분석
 @app.get("/api/analytics")
-async def analytics():
+async def analytics(response: Response):
     """사용 분석 데이터"""
+    response.headers["Cache-Control"] = "public, max-age=60"
     return get_analytics()
 
 

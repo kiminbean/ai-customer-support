@@ -22,8 +22,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiOrigin = new URL(apiUrl).origin;
+
   return (
     <html lang="ko">
+      <head>
+        <link rel="preconnect" href={apiOrigin} />
+        <link rel="dns-prefetch" href={apiOrigin} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

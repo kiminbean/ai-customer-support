@@ -13,40 +13,73 @@ npm start         # Production server
 ```
 src/
   app/
-    layout.tsx            # Root layout: Geist font, lang="ko", antialiased
+    layout.tsx            # Root layout: Geist font, lang="ko", preconnect to API
     globals.css           # Tailwind v4 import + CSS custom props + animations
-    page.tsx              # Landing page (~467 lines, all components inline)
-    demo/page.tsx         # Chat demo interface — "use client"
-    dashboard/page.tsx    # Admin dashboard — "use client"
-    datahub/page.tsx      # HuggingFace dataset browser — "use client"
-    crawler/page.tsx      # Web crawler UI — "use client"
-    widget/page.tsx       # Embeddable chat widget — "use client"
+    page.tsx              # Landing page (server component)
+    error.tsx             # Global error boundary (Sentry integration)
+    loading.tsx           # Global loading state
+    not-found.tsx         # Custom 404 page
+    demo/page.tsx         # Chat demo interface
+    widget/page.tsx       # Embeddable widget preview + iframe mode
+    (admin)/              # Route group — shared sidebar layout
+      layout.tsx          # DashboardSidebar + useHealthCheck
+      dashboard/
+        page.tsx          # Admin dashboard (real API data + demo fallback)
+        error.tsx         # Dashboard error boundary
+        loading.tsx       # Dashboard loading state
+      datahub/page.tsx    # HuggingFace dataset browser
+      crawler/page.tsx    # Web crawler UI
+      voice/page.tsx      # Voice-to-knowledge-base pipeline
+  components/
+    Navbar.tsx            # Shared navbar (landing/app variants, mobile hamburger)
+    DashboardSidebar.tsx  # Admin sidebar (desktop fixed, mobile overlay)
+    BackendBadge.tsx      # Backend online/offline indicator
+    icons.tsx             # SVG icon components (LogoIcon)
+  hooks/
+    useHealthCheck.ts     # Backend health polling hook
   lib/
-    api.ts                # ALL backend API calls — typed fetch wrappers
+    api.ts                # ALL backend API calls — typed fetch wrappers (493 lines)
+public/
+  widget.js               # Embeddable chat widget IIFE (<5KB, vanilla JS)
 ```
 
 ## Page Patterns
 
-- **Server components** (default): `page.tsx` (landing) — no client interactivity needed
+- **Server components** (default): `page.tsx` (landing), `layout.tsx`
 - **Client components**: All other pages use `"use client"` for state/effects
-- **Inline components**: All components defined in the same page file (no `components/` dir)
-- **Large pages**: Landing (467 lines), Crawler (864), Datahub (851), Dashboard (784) — all self-contained
+- **Admin pages**: Under `(admin)/` route group, sidebar provided by shared layout
+- **Error boundaries**: `error.tsx` at root and dashboard level, with Sentry capture
+
+## Shared Components
+
+- **Navbar**: `variant="landing"` (features/pricing links) or `variant="app"` (nav links only). Mobile hamburger menu on < md.
+- **DashboardSidebar**: 5 nav items (dashboard, datahub, crawler, voice, knowledge). Props: `activePage`, `backendOnline`, `mobileOpen`, `onMobileClose`. Mobile overlay with backdrop.
+- **BackendBadge**: Green/red dot with Korean status text. Used in sidebar footer.
 
 ## API Client (`lib/api.ts`)
 
 - `API_BASE` from `NEXT_PUBLIC_API_URL` env var, defaults `http://localhost:8000`
-- Every function follows pattern: `async function name(...): Promise<T>` with `if (!res.ok) throw new Error(...)`
-- Interfaces defined at top of file: `ChatResponse`, `Document`, `Conversation`, `Analytics`, `Datahub*`, `Crawl*`
-- All endpoints called via `fetch()` — no axios or other HTTP libs
+- `getAuthHeaders()` adds `X-API-Key` when `NEXT_PUBLIC_API_KEY` is set
+- Interfaces: `ChatResponse`, `Document`, `Conversation`, `Analytics`, `Datahub*`, `Crawl*`, `Voice*`
+- Voice API: 7 interfaces + 7 fetch functions (upload, demo, status, transcript, document, approve, jobs)
+- All endpoints via `fetch()` — no axios
 
 ## Styling
 
 - **Tailwind v4** via `@import "tailwindcss"` in globals.css (not v3 config)
-- **Brand color**: `#2563EB` (blue-600) — hardcoded in components, also as CSS var `--primary`
+- **Brand color**: `#2563EB` (blue-600)
 - **CSS custom properties**: `--background`, `--foreground`, `--primary`, `--gray-*` scale
 - **Fonts**: Geist Sans + Geist Mono via `next/font/google`
-- **Custom animations**: `typing-dot`, `fadeInUp`, `pulse-glow`, `grow-bar` in globals.css
+- **Custom animations**: `typing-dot`, `fadeInUp`, `pulse-glow`, `grow-bar`
 - **No dark mode** — light theme only
+- **Mobile responsive**: Hamburger menu on Navbar (< md), sidebar overlay on admin (< lg)
+
+## Sentry Integration
+
+- `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`
+- `next.config.ts` wrapped with `withSentryConfig`
+- Error boundaries call `Sentry.captureException`
+- Only active when `NEXT_PUBLIC_SENTRY_DSN` is set
 
 ## Conventions
 
@@ -59,8 +92,7 @@ src/
 
 ## Gotchas
 
-- No shared component library — every page rebuilds common UI (navbar, buttons)
-- `page.tsx` (landing) is server component but other pages are client — don't mix patterns
-- No loading/error boundaries defined yet
-- No `middleware.ts` — no auth, redirects, or edge logic
 - `postcss.config.mjs` exists (Tailwind v4 requirement)
+- Widget page has dual mode: normal preview vs iframe embed (`?embed=true`)
+- Dashboard fetches real data on mount, falls back to mock data if backend offline
+- Admin pages should go under `(admin)/` route group, NOT at app root
