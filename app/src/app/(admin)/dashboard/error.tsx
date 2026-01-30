@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import * as Sentry from '@sentry/nextjs';
 
 export default function DashboardError({
   error,
@@ -13,7 +12,9 @@ export default function DashboardError({
   useEffect(() => {
     console.error(error);
     if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-      Sentry.captureException(error);
+      import('@sentry/nextjs').then((Sentry) => {
+        Sentry.captureException(error);
+      }).catch(() => {});
     }
   }, [error]);
 
