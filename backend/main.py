@@ -7,10 +7,12 @@ RAG + Deep Agents 기반 지능형 고객지원 시스템
 
 from __future__ import annotations
 
+import logging
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import AsyncIterator, List, Optional
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,14 +27,20 @@ import config
 from agents.orchestrator import (
     get_analytics,
     get_conversation,
+    init_conversations,
     list_conversations,
     process_message,
 )
 from auth import api_key_auth_middleware
 from crawler.routes import router as crawler_router
+from database import init_db
+from logging_config import setup_logging
+from middleware import CorrelationIdMiddleware
 from rag.document_loader import delete_document, list_documents, load_file, load_sample_docs
 from datahub.routes import router as datahub_router
 from voice.routes import router as voice_router
+
+logger = logging.getLogger(__name__)
 
 # ── Rate Limiter 설정 ──────────────────────────────────────
 
@@ -41,12 +49,44 @@ limiter = Limiter(
     default_limits=["60/minute"],
 )
 
+# ── Lifespan ───────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """앱 시작/종료 시 실행되는 수명 주기 관리자"""
+    setup_logging()
+
+    if config.SENTRY_DSN:
+        try:
+            import sentry_sdk
+            sentry_sdk.init(dsn=config.SENTRY_DSN, traces_sample_rate=0.1)
+            logger.info("Sentry 초기화 완료")
+        except Exception:
+            logger.warning("Sentry 초기화 실패 — 모니터링 없이 계속합니다.", exc_info=True)
+
+    await init_db()
+    await init_conversations()
+
+    loaded = load_sample_docs()
+    mode = "데모 모드" if config.DEMO_MODE else "프로덕션 모드"
+    logger.info(
+        "%s v%s 시작 — %s, 샘플 문서 %d개 로드",
+        config.APP_TITLE,
+        config.APP_VERSION,
+        mode,
+        loaded,
+    )
+
+    yield
+
+
 # ── FastAPI 앱 ─────────────────────────────────────────────
 
 app = FastAPI(
     title=config.APP_TITLE,
     version=config.APP_VERSION,
     description="RAG + Deep Agents 기반 AI 고객지원 API",
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter
@@ -59,6 +99,7 @@ app.include_router(voice_router)
 # ── 미들웨어 (등록 순서: innermost → outermost) ───────────
 
 app.add_middleware(BaseHTTPMiddleware, dispatch=api_key_auth_middleware)
+app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -95,20 +136,6 @@ class SettingsRequest(BaseModel):
     tone: Optional[str] = None
 
 
-# ── 시작 이벤트 ────────────────────────────────────────────
-
-@app.on_event("startup")
-async def startup_event():
-    """앱 시작 시 샘플 문서 로드"""
-    loaded = load_sample_docs()
-    mode = "🎮 데모 모드" if config.DEMO_MODE else "🚀 프로덕션 모드"
-    print(f"\n{'='*50}")
-    print(f"  {config.APP_TITLE} v{config.APP_VERSION}")
-    print(f"  모드: {mode}")
-    print(f"  샘플 문서 로드: {loaded}개")
-    print(f"{'='*50}\n")
-
-
 # ── API 엔드포인트 ─────────────────────────────────────────
 
 # 1. 채팅
@@ -122,7 +149,7 @@ async def chat(request: Request, body: ChatRequest):
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="메시지를 입력해 주세요.")
 
-    result = process_message(
+    result = await process_message(
         message=body.message,
         conversation_id=body.conversation_id,
     )
@@ -220,7 +247,7 @@ async def get_conversations():
 @app.get("/api/conversations/{conv_id}")
 async def get_conversation_detail(conv_id: str):
     """대화 이력 상세 조회"""
-    conv = get_conversation(conv_id)
+    conv = await get_conversation(conv_id)
     if not conv:
         raise HTTPException(status_code=404, detail="대화를 찾을 수 없습니다.")
     return conv

@@ -8,17 +8,51 @@
 
 from __future__ import annotations
 
-import re
+import logging
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from agents import faq_agent, order_agent, escalation_agent
+from agents import escalation_agent, faq_agent, order_agent
 
-# ── 대화 메모리 (인메모리) ─────────────────────────────────
+logger = logging.getLogger(__name__)
+
+# ── 대화 메모리 (인메모리 캐시 + SQLite 영속화) ───────────────
 
 _MAX_CONVERSATIONS = 1000
 _conversations: Dict[str, Dict] = {}
+_db_loaded: bool = False
+
+
+async def init_conversations() -> None:
+    """시작 시 SQLite에서 기존 대화를 인메모리 캐시로 로드"""
+    global _db_loaded
+    if _db_loaded:
+        return
+    _db_loaded = True
+    try:
+        from database import load_all_conversations
+        loaded = await load_all_conversations()
+        _conversations.update(loaded)
+        if loaded:
+            logger.info("SQLite에서 대화 %d건 로드", len(loaded))
+    except Exception:
+        logger.warning("SQLite 대화 로드 실패 — 인메모리 전용", exc_info=True)
+
+
+async def _ensure_db_loaded() -> None:
+    """최초 접근 시 lazy init (init_conversations 미호출 대비)"""
+    if not _db_loaded:
+        await init_conversations()
+
+
+async def _persist_conversation(conv: Dict) -> None:
+    """대화를 SQLite에 비동기 저장 (best-effort)"""
+    try:
+        from database import save_conversation
+        await save_conversation(conv)
+    except Exception:
+        logger.warning("대화 영속화 실패 (id=%s)", conv.get("id"), exc_info=True)
 
 
 def _get_or_create_conversation(conversation_id: Optional[str] = None) -> Dict:
@@ -97,7 +131,7 @@ def _handle_greeting(query: str) -> Dict:
 
 # ── 메인 오케스트레이터 ───────────────────────────────────
 
-def process_message(
+async def process_message(
     message: str,
     conversation_id: Optional[str] = None,
 ) -> Dict:
@@ -106,9 +140,11 @@ def process_message(
     1) 의도 분류
     2) 서브에이전트 라우팅
     3) 에스컬레이션 체크
-    4) 대화 기록 저장
+    4) 대화 기록 저장 (인메모리 + SQLite)
     5) 구조화된 응답 반환
     """
+    await _ensure_db_loaded()
+
     conv = _get_or_create_conversation(conversation_id)
     conv_id = conv["id"]
 
@@ -150,6 +186,8 @@ def process_message(
     })
     conv["updated_at"] = datetime.now().isoformat()
 
+    await _persist_conversation(conv)
+
     # 5. 응답 구성
     result["conversation_id"] = conv_id
     result["intent"] = result.get("intent", intent)
@@ -158,13 +196,28 @@ def process_message(
 
 # ── 대화 관리 ──────────────────────────────────────────────
 
-def get_conversation(conversation_id: str) -> Optional[Dict]:
-    """대화 이력 조회"""
-    return _conversations.get(conversation_id)
+async def get_conversation(conversation_id: str) -> Optional[Dict]:
+    """대화 이력 조회 (캐시 → SQLite 폴백)"""
+    await _ensure_db_loaded()
+
+    cached = _conversations.get(conversation_id)
+    if cached:
+        return cached
+
+    try:
+        from database import load_conversation
+        conv = await load_conversation(conversation_id)
+        if conv:
+            _conversations[conversation_id] = conv
+            return conv
+    except Exception:
+        logger.warning("SQLite 대화 조회 실패 (id=%s)", conversation_id, exc_info=True)
+
+    return None
 
 
 def list_conversations() -> List[Dict]:
-    """전체 대화 목록"""
+    """전체 대화 목록 (인메모리 캐시 기준)"""
     return [
         {
             "id": c["id"],
@@ -178,11 +231,10 @@ def list_conversations() -> List[Dict]:
 
 
 def get_analytics() -> Dict:
-    """사용 분석 데이터"""
+    """사용 분석 데이터 (인메모리 캐시 기준)"""
     total_conversations = len(_conversations)
     total_messages = sum(len(c["messages"]) for c in _conversations.values())
 
-    # 에이전트별 통계
     agent_counts: Dict[str, int] = {}
     intent_counts: Dict[str, int] = {}
     for conv in _conversations.values():

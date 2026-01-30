@@ -13,6 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 SAMPLE_DOCS_DIR = DATA_DIR / "sample_docs"
 UPLOAD_DIR = DATA_DIR / "uploads"
+DATABASE_PATH = DATA_DIR / "app.db"
 
 # 디렉토리 자동 생성
 for d in [DATA_DIR, SAMPLE_DOCS_DIR, UPLOAD_DIR]:
@@ -24,6 +25,12 @@ DEMO_MODE = not bool(OPENAI_API_KEY)
 
 # ── API 인증 설정 ─────────────────────────────────────────
 API_KEY = os.getenv("API_KEY", "").strip()
+
+# ── 로깅 설정 ─────────────────────────────────────────────
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").strip()
+
+# ── Sentry 설정 ───────────────────────────────────────────
+SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()
 
 # ── 모델 설정 (런타임에 변경 가능) ─────────────────────────
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")

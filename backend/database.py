@@ -9,7 +9,7 @@ import json
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 import aiosqlite
 
