@@ -1,4 +1,10 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
+
+function getAuthHeaders(): Record<string, string> {
+  if (!API_KEY) return {};
+  return { 'X-API-Key': API_KEY };
+}
 
 export interface ChatResponse {
   response: string;
@@ -44,7 +50,7 @@ export interface Analytics {
 export async function sendMessage(message: string, conversationId?: string): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ message, conversation_id: conversationId }),
   });
   if (!res.ok) throw new Error(`Chat API error: ${res.status}`);
@@ -63,6 +69,7 @@ export async function uploadDocument(file: File): Promise<UploadResponse> {
   formData.append('file', file);
   const res = await fetch(`${API_BASE}/api/documents/upload`, {
     method: 'POST',
+    headers: { ...getAuthHeaders() },
     body: formData,
   });
   if (!res.ok) throw new Error(`Upload error: ${res.status}`);
@@ -70,7 +77,7 @@ export async function uploadDocument(file: File): Promise<UploadResponse> {
 }
 
 export async function getDocuments(): Promise<Document[]> {
-  const res = await fetch(`${API_BASE}/api/documents`);
+  const res = await fetch(`${API_BASE}/api/documents`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Documents API error: ${res.status}`);
   const data = await res.json();
   return Array.isArray(data) ? data : data.documents || [];
@@ -79,19 +86,20 @@ export async function getDocuments(): Promise<Document[]> {
 export async function deleteDocument(docId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/documents/${docId}`, {
     method: 'DELETE',
+    headers: { ...getAuthHeaders() },
   });
   if (!res.ok) throw new Error(`Delete error: ${res.status}`);
 }
 
 export async function getConversations(): Promise<Conversation[]> {
-  const res = await fetch(`${API_BASE}/api/conversations`);
+  const res = await fetch(`${API_BASE}/api/conversations`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Conversations API error: ${res.status}`);
   const data = await res.json();
   return Array.isArray(data) ? data : data.conversations || [];
 }
 
 export async function getAnalytics(): Promise<Analytics> {
-  const res = await fetch(`${API_BASE}/api/analytics`);
+  const res = await fetch(`${API_BASE}/api/analytics`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Analytics API error: ${res.status}`);
   return res.json();
 }
@@ -99,7 +107,7 @@ export async function getAnalytics(): Promise<Analytics> {
 export async function updateSettings(settings: Record<string, unknown>): Promise<void> {
   const res = await fetch(`${API_BASE}/api/settings`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(settings),
   });
   if (!res.ok) throw new Error(`Settings API error: ${res.status}`);
@@ -107,7 +115,7 @@ export async function updateSettings(settings: Record<string, unknown>): Promise
 
 export async function checkHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${API_BASE}/api/health`, { headers: { ...getAuthHeaders() }, signal: AbortSignal.timeout(3000) });
     return res.ok;
   } catch {
     return false;
@@ -158,7 +166,7 @@ export interface DatahubImportedDataset {
 }
 
 export async function getDatahubDomains(): Promise<DatahubDomain[]> {
-  const res = await fetch(`${API_BASE}/api/datahub/domains`);
+  const res = await fetch(`${API_BASE}/api/datahub/domains`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Datahub domains error: ${res.status}`);
   return res.json();
 }
@@ -167,13 +175,13 @@ export async function getDatahubDatasets(domain?: string): Promise<DatahubDatase
   const url = domain
     ? `${API_BASE}/api/datahub/datasets?domain=${encodeURIComponent(domain)}`
     : `${API_BASE}/api/datahub/datasets`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Datahub datasets error: ${res.status}`);
   return res.json();
 }
 
 export async function searchDatahubDatasets(query: string): Promise<DatahubDataset[]> {
-  const res = await fetch(`${API_BASE}/api/datahub/search?q=${encodeURIComponent(query)}`);
+  const res = await fetch(`${API_BASE}/api/datahub/search?q=${encodeURIComponent(query)}`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Datahub search error: ${res.status}`);
   return res.json();
 }
@@ -181,7 +189,7 @@ export async function searchDatahubDatasets(query: string): Promise<DatahubDatas
 export async function downloadDataset(datasetId: string): Promise<DatahubJobResponse> {
   const res = await fetch(`${API_BASE}/api/datahub/download`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ dataset_id: datasetId }),
   });
   if (!res.ok) throw new Error(`Datahub download error: ${res.status}`);
@@ -189,7 +197,7 @@ export async function downloadDataset(datasetId: string): Promise<DatahubJobResp
 }
 
 export async function getDownloadStatus(jobId: string): Promise<DatahubJobStatus> {
-  const res = await fetch(`${API_BASE}/api/datahub/download/${encodeURIComponent(jobId)}/status`);
+  const res = await fetch(`${API_BASE}/api/datahub/download/${encodeURIComponent(jobId)}/status`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Datahub download status error: ${res.status}`);
   return res.json();
 }
@@ -197,7 +205,7 @@ export async function getDownloadStatus(jobId: string): Promise<DatahubJobStatus
 export async function processDataset(datasetId: string, translate: boolean): Promise<DatahubJobResponse> {
   const res = await fetch(`${API_BASE}/api/datahub/process`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ dataset_id: datasetId, translate }),
   });
   if (!res.ok) throw new Error(`Datahub process error: ${res.status}`);
@@ -205,7 +213,7 @@ export async function processDataset(datasetId: string, translate: boolean): Pro
 }
 
 export async function getProcessStatus(jobId: string): Promise<DatahubJobStatus> {
-  const res = await fetch(`${API_BASE}/api/datahub/process/${encodeURIComponent(jobId)}/status`);
+  const res = await fetch(`${API_BASE}/api/datahub/process/${encodeURIComponent(jobId)}/status`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Datahub process status error: ${res.status}`);
   return res.json();
 }
@@ -213,14 +221,14 @@ export async function getProcessStatus(jobId: string): Promise<DatahubJobStatus>
 export async function importDataset(datasetId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/datahub/import`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ dataset_id: datasetId }),
   });
   if (!res.ok) throw new Error(`Datahub import error: ${res.status}`);
 }
 
 export async function getImportedDatasets(): Promise<DatahubImportedDataset[]> {
-  const res = await fetch(`${API_BASE}/api/datahub/imported`);
+  const res = await fetch(`${API_BASE}/api/datahub/imported`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Datahub imported error: ${res.status}`);
   return res.json();
 }
@@ -285,7 +293,7 @@ export async function startCrawl(
 ): Promise<CrawlStartResponse> {
   const res = await fetch(`${API_BASE}/api/crawler/start`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({
       url,
       max_depth: options?.maxDepth,
@@ -299,13 +307,13 @@ export async function startCrawl(
 }
 
 export async function getCrawlStatus(jobId: string): Promise<CrawlStatus> {
-  const res = await fetch(`${API_BASE}/api/crawler/status/${encodeURIComponent(jobId)}`);
+  const res = await fetch(`${API_BASE}/api/crawler/status/${encodeURIComponent(jobId)}`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Crawler status error: ${res.status}`);
   return res.json();
 }
 
 export async function getCrawlResults(jobId: string): Promise<CrawlResults> {
-  const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}`);
+  const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Crawler results error: ${res.status}`);
   return res.json();
 }
@@ -313,7 +321,7 @@ export async function getCrawlResults(jobId: string): Promise<CrawlResults> {
 export async function convertCrawlResults(jobId: string, selectedItems?: number[]): Promise<void> {
   const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}/convert`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ selected_items: selectedItems }),
   });
   if (!res.ok) throw new Error(`Crawler convert error: ${res.status}`);
@@ -322,12 +330,13 @@ export async function convertCrawlResults(jobId: string, selectedItems?: number[
 export async function importCrawlResults(jobId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}/import`, {
     method: 'POST',
+    headers: { ...getAuthHeaders() },
   });
   if (!res.ok) throw new Error(`Crawler import error: ${res.status}`);
 }
 
 export async function getCrawlJobs(): Promise<CrawlJob[]> {
-  const res = await fetch(`${API_BASE}/api/crawler/jobs`);
+  const res = await fetch(`${API_BASE}/api/crawler/jobs`, { headers: { ...getAuthHeaders() } });
   if (!res.ok) throw new Error(`Crawler jobs error: ${res.status}`);
   return res.json();
 }

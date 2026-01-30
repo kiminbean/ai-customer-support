@@ -12,9 +12,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
 import config
 from agents.orchestrator import (
@@ -23,10 +28,18 @@ from agents.orchestrator import (
     list_conversations,
     process_message,
 )
+from auth import api_key_auth_middleware
 from crawler.routes import router as crawler_router
 from rag.document_loader import delete_document, list_documents, load_file, load_sample_docs
 from datahub.routes import router as datahub_router
 from voice.routes import router as voice_router
+
+# ── Rate Limiter 설정 ──────────────────────────────────────
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["60/minute"],
+)
 
 # ── FastAPI 앱 ─────────────────────────────────────────────
 
@@ -36,10 +49,17 @@ app = FastAPI(
     description="RAG + Deep Agents 기반 AI 고객지원 API",
 )
 
-# 크롤러 라우터 등록
-app.include_router(crawler_router)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS 설정
+app.include_router(crawler_router)
+app.include_router(datahub_router)
+app.include_router(voice_router)
+
+# ── 미들웨어 (등록 순서: innermost → outermost) ───────────
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=api_key_auth_middleware)
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
@@ -47,12 +67,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 데이터 허브 라우터 등록
-app.include_router(datahub_router)
-
-# 음성 라우터 등록
-app.include_router(voice_router)
 
 
 # ── Pydantic 모델 ─────────────────────────────────────────
@@ -99,17 +113,18 @@ async def startup_event():
 
 # 1. 채팅
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+@limiter.limit("30/minute")
+async def chat(request: Request, body: ChatRequest):
     """
     AI 고객지원 채팅.
     사용자 메시지를 받아 적절한 에이전트가 응답을 생성한다.
     """
-    if not request.message.strip():
+    if not body.message.strip():
         raise HTTPException(status_code=400, detail="메시지를 입력해 주세요.")
 
     result = process_message(
-        message=request.message,
-        conversation_id=request.conversation_id,
+        message=body.message,
+        conversation_id=body.conversation_id,
     )
 
     return ChatResponse(
@@ -127,7 +142,8 @@ async def chat(request: ChatRequest):
 
 # 2. 문서 업로드
 @app.post("/api/documents/upload")
-async def upload_document(file: UploadFile = File(...)):
+@limiter.limit("10/minute")
+async def upload_document(request: Request, file: UploadFile = File(...)):
     """
     지식 베이스 문서 업로드.
     지원 형식: .txt, .md, .pdf
@@ -249,6 +265,7 @@ async def get_settings():
 
 # 9. 헬스 체크
 @app.get("/api/health")
+@limiter.exempt
 async def health():
     """서비스 상태 확인"""
     docs = list_documents()

@@ -22,6 +22,9 @@ for d in [DATA_DIR, SAMPLE_DOCS_DIR, UPLOAD_DIR]:
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 DEMO_MODE = not bool(OPENAI_API_KEY)
 
+# ── API 인증 설정 ─────────────────────────────────────────
+API_KEY = os.getenv("API_KEY", "").strip()
+
 # ── 모델 설정 (런타임에 변경 가능) ─────────────────────────
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
@@ -37,9 +40,11 @@ MIN_SIMILARITY = 0.3
 APP_TITLE = "AI 고객지원 플랫폼"
 APP_VERSION = "1.0.0"
 CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    # 프로덕션 배포 시 실제 도메인 추가
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
+    ).split(",")
+    if origin.strip()
 ]
 
 # ── 모델 허용 목록 ───────────────────────────────────────

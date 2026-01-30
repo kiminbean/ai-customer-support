@@ -10,6 +10,7 @@ pydantic-settings>=2.0.0
 scikit-learn>=1.5.0
 pytest>=8.0.0
 httpx>=0.27.0
+slowapi>=0.1.9
 
 # Voice-to-RAG (음성→지식베이스)
 pydub>=0.25.1
