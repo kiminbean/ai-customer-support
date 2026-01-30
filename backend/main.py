@@ -24,6 +24,7 @@ from agents.orchestrator import (
     list_conversations,
     process_message,
 )
+from crawler.routes import router as crawler_router
 from rag.document_loader import delete_document, list_documents, load_file, load_sample_docs
 from datahub.routes import router as datahub_router
 
@@ -34,6 +35,9 @@ app = FastAPI(
     version=config.APP_VERSION,
     description="RAG + Deep Agents 기반 AI 고객지원 API",
 )
+
+# 크롤러 라우터 등록
+app.include_router(crawler_router)
 
 # CORS 설정
 app.add_middleware(
