@@ -324,7 +324,7 @@ export default function CrawlerPage() {
           </div>
 
           {/* ── URL Input Section ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <div className="flex gap-3">
               <div className="flex-1 relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔗</span>
@@ -371,7 +371,7 @@ export default function CrawlerPage() {
                 고급 설정
               </button>
               {showAdvanced && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5 p-5 bg-gray-50 rounded-xl border border-gray-200">
                   {/* Depth */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -520,8 +520,8 @@ export default function CrawlerPage() {
               )}
 
               {/* Tabs + Actions */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between border-b border-gray-100 px-4">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between border-b border-gray-200 px-4">
                   <div className="flex">
                     {([
                       { key: "faqs" as const, label: "질문답변", icon: "❓", count: tabCounts.faqs },
@@ -653,7 +653,7 @@ export default function CrawlerPage() {
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
                   <span className="text-xs text-gray-400">
                     {selectedItems.size > 0 ? `${selectedItems.size}개 항목 선택됨` : "항목을 선택하세요"}
                   </span>
@@ -678,7 +678,7 @@ export default function CrawlerPage() {
           )}
 
           {/* ── Crawl History ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <button
               onClick={() => setShowHistory(!showHistory)}
               className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
@@ -696,7 +696,7 @@ export default function CrawlerPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                        <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
                           <th className="pb-2 font-medium">URL</th>
                           <th className="pb-2 font-medium">날짜</th>
                           <th className="pb-2 font-medium">상태</th>

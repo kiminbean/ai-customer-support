@@ -77,10 +77,10 @@ export function DashboardSidebar({ activePage, backendOnline, mobileOpen = false
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-200 ease-in-out
+        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ease-in-out
         ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
               <LogoIcon className="w-5 h-5 text-white" />
@@ -125,7 +125,7 @@ export function DashboardSidebar({ activePage, backendOnline, mobileOpen = false
             );
           })}
         </nav>
-        <div className="p-4 border-t border-gray-100 space-y-3 mt-auto">
+        <div className="p-4 border-t border-gray-200 space-y-3 mt-auto">
           <BackendBadge online={backendOnline} />
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">IB</div>

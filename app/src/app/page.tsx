@@ -52,9 +52,9 @@ function HeroSection() {
 
         {/* Hero visual - chat preview */}
         <div className="mt-16 max-w-3xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl shadow-gray-200/50 border border-gray-200 overflow-hidden">
             {/* Browser bar */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-400" />
                 <div className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -187,7 +187,7 @@ function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300 group"
+              className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-100 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300 group"
             >
               <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-[#2563EB] group-hover:bg-[#2563EB] group-hover:text-white transition-colors duration-300">
                 {feature.icon}
@@ -365,7 +365,7 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <footer className="border-t border-gray-200 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
@@ -408,7 +408,7 @@ function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
+        <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-400">
           © 2025 SupportAI. All rights reserved.
         </div>
       </div>

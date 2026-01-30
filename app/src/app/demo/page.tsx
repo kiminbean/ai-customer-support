@@ -204,7 +204,7 @@ export default function DemoPage() {
         </div>
 
         {/* Chat container */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg shadow-gray-300/40 border border-gray-200 overflow-hidden">
           {/* Chat header */}
           <div className="bg-[#2563EB] px-6 py-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -242,7 +242,7 @@ export default function DemoPage() {
                     className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
                       msg.role === "user"
                         ? "bg-[#2563EB] text-white rounded-br-md"
-                        : "bg-white text-gray-700 rounded-bl-md shadow-sm border border-gray-100"
+                        : "bg-white text-gray-700 rounded-bl-md shadow-sm border border-gray-200"
                     }`}
                   >
                     {msg.text}
@@ -288,7 +288,7 @@ export default function DemoPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-md shadow-sm border border-gray-100">
+                <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-md shadow-sm border border-gray-200">
                   <div className="flex gap-1.5">
                     <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot" />
                     <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot" />
@@ -301,7 +301,7 @@ export default function DemoPage() {
           </div>
 
           {/* Quick questions */}
-          <div className="px-4 py-2 border-t border-gray-100 bg-white">
+          <div className="px-4 py-2 border-t border-gray-200 bg-gray-50/50">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {quickQuestions.map((q) => (
                 <button
@@ -322,7 +322,7 @@ export default function DemoPage() {
           </div>
 
           {/* Input */}
-          <div className="px-4 pb-4 pt-2 bg-white">
+          <div className="px-4 pb-4 pt-2 bg-white border-t border-gray-100">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -353,17 +353,17 @@ export default function DemoPage() {
 
         {/* Info cards */}
         <div className="mt-8 grid sm:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-xl border border-gray-100">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="text-2xl mb-2">⚡</div>
             <h3 className="font-semibold text-sm text-gray-900">즉각 응답</h3>
             <p className="text-xs text-gray-500 mt-1">평균 0.3초 내 AI 자동 응답</p>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-100">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="text-2xl mb-2">🧠</div>
             <h3 className="font-semibold text-sm text-gray-900">컨텍스트 이해</h3>
             <p className="text-xs text-gray-500 mt-1">대화 맥락을 파악하여 정확한 답변</p>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-100">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="text-2xl mb-2">🔄</div>
             <h3 className="font-semibold text-sm text-gray-900">상담원 연결</h3>
             <p className="text-xs text-gray-500 mt-1">필요 시 실제 상담원에게 자동 전환</p>

@@ -84,8 +84,8 @@ function Sidebar({ activeTab, setActiveTab, backendOnline }: { activeTab: TabTyp
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-100 min-h-screen flex flex-col">
-      <div className="p-4 border-b border-gray-100">
+    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+      <div className="p-4 border-b border-gray-200">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@ function Sidebar({ activeTab, setActiveTab, backendOnline }: { activeTab: TabTyp
             {tab.label}
           </button>
         ))}
-        <div className="border-t border-gray-100 my-2" />
+        <div className="border-t border-gray-200 my-2" />
         <Link
           href="/datahub"
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
@@ -117,7 +117,7 @@ function Sidebar({ activeTab, setActiveTab, backendOnline }: { activeTab: TabTyp
           데이터 허브
         </Link>
       </nav>
-      <div className="p-4 border-t border-gray-100 space-y-3">
+      <div className="p-4 border-t border-gray-200 space-y-3">
         <BackendBadge online={backendOnline} />
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">IB</div>
@@ -174,7 +174,7 @@ function OverviewTab({ backendOnline, conversations, analytics, documents, isLoa
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 animate-pulse">
+            <div key={i} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm animate-pulse">
               <div className="flex items-center justify-between">
                 <div className="w-8 h-8 bg-gray-200 rounded" />
                 <div className="w-12 h-5 bg-gray-200 rounded-full" />
@@ -187,7 +187,7 @@ function OverviewTab({ backendOnline, conversations, analytics, documents, isLoa
           ))
         ) : (
           stats.map((stat) => (
-            <div key={stat.label} className="bg-white p-5 rounded-xl border border-gray-100">
+            <div key={stat.label} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-2xl">{stat.icon}</span>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
@@ -205,7 +205,7 @@ function OverviewTab({ backendOnline, conversations, analytics, documents, isLoa
 
       {/* Charts row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-gray-100">
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">주간 대화 추이</h3>
           <div className="flex items-end gap-3 h-40">
             {dailyChart.map((d) => (
@@ -222,7 +222,7 @@ function OverviewTab({ backendOnline, conversations, analytics, documents, isLoa
             ))}
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100">
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">문의 카테고리 분포</h3>
           <div className="space-y-3">
             {categoryData.map((cat) => (
@@ -241,8 +241,8 @@ function OverviewTab({ backendOnline, conversations, analytics, documents, isLoa
       </div>
 
       {/* Recent conversations */}
-      <div className="bg-white rounded-xl border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">최근 대화</h3>
           <button className="text-xs text-[#2563EB] hover:underline font-medium">전체 보기</button>
         </div>
@@ -315,10 +315,10 @@ function ConversationsTab({ conversations, isLoading }: { conversations: Convers
           </select>
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
+            <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">고객</th>
               <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">마지막 메시지</th>
               <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">상태</th>
@@ -409,21 +409,21 @@ function AnalyticsTab({ analytics }: { analytics: Analytics | null }) {
         <p className="text-sm text-gray-500 mt-1">고객지원 성과를 분석하고 개선점을 찾으세요</p>
       </div>
       <div className="grid sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-100">
+        <div className="bg-white p-5 rounded-xl border border-gray-200">
           <div className="text-xs text-gray-500 mb-1">AI 자동 해결률</div>
           <div className="text-3xl font-bold text-gray-900">{aiResolution}%</div>
           <div className="mt-2 w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-green-500 rounded-full" style={{ width: `${aiResolution}%` }} />
           </div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-100">
+        <div className="bg-white p-5 rounded-xl border border-gray-200">
           <div className="text-xs text-gray-500 mb-1">상담원 전환율</div>
           <div className="text-3xl font-bold text-gray-900">{escalationRate}%</div>
           <div className="mt-2 w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-orange-500 rounded-full" style={{ width: `${escalationRate}%` }} />
           </div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-100">
+        <div className="bg-white p-5 rounded-xl border border-gray-200">
           <div className="text-xs text-gray-500 mb-1">평균 대화 턴수</div>
           <div className="text-3xl font-bold text-gray-900">{avgTurns}회</div>
           <div className="mt-2 w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -431,7 +431,7 @@ function AnalyticsTab({ analytics }: { analytics: Analytics | null }) {
           </div>
         </div>
       </div>
-      <div className="bg-white p-6 rounded-xl border border-gray-100">
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
         <h3 className="text-sm font-semibold text-gray-900 mb-4">시간대별 문의량</h3>
         <div className="flex items-end gap-4 h-48">
           {hourlyData.map((d) => (
@@ -449,7 +449,7 @@ function AnalyticsTab({ analytics }: { analytics: Analytics | null }) {
           ))}
         </div>
       </div>
-      <div className="bg-white p-6 rounded-xl border border-gray-100">
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
         <h3 className="text-sm font-semibold text-gray-900 mb-4">만족도 분포</h3>
         <div className="space-y-3">
           {satisfactionDist.map((row) => (
@@ -544,11 +544,11 @@ function KnowledgeTab({ backendOnline }: { backendOnline: boolean }) {
 
       {/* Stats */}
       <div className="grid sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-100">
+        <div className="bg-white p-5 rounded-xl border border-gray-200">
           <div className="text-xs text-gray-500 mb-1">등록된 문서</div>
           <div className="text-3xl font-bold text-gray-900">{documents.length}건</div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-100">
+        <div className="bg-white p-5 rounded-xl border border-gray-200">
           <div className="text-xs text-gray-500 mb-1">마지막 업데이트</div>
           <div className="text-lg font-bold text-gray-900">
             {documents.length > 0
@@ -556,7 +556,7 @@ function KnowledgeTab({ backendOnline }: { backendOnline: boolean }) {
               : "-"}
           </div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-100">
+        <div className="bg-white p-5 rounded-xl border border-gray-200">
           <div className="text-xs text-gray-500 mb-1">백엔드 상태</div>
           <div className={`text-lg font-bold ${backendOnline ? "text-green-600" : "text-red-500"}`}>
             {backendOnline ? "✅ 연결됨" : "❌ 오프라인"}
@@ -605,8 +605,8 @@ function KnowledgeTab({ backendOnline }: { backendOnline: boolean }) {
       </div>
 
       {/* Document list */}
-      <div className="bg-white rounded-xl border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900">등록된 문서 ({documents.length})</h3>
         </div>
         {loading ? (
@@ -683,7 +683,7 @@ function SettingsTab({ backendOnline }: { backendOnline: boolean }) {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* AI Configuration */}
-        <div className="bg-white p-6 rounded-xl border border-gray-100">
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">AI 모델 설정</h3>
           <div className="space-y-4">
             <div>
@@ -723,7 +723,7 @@ function SettingsTab({ backendOnline }: { backendOnline: boolean }) {
         </div>
 
         {/* Chat Widget Settings */}
-        <div className="bg-white p-6 rounded-xl border border-gray-100">
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">채팅 위젯 설정</h3>
           <div className="space-y-4">
             <div>

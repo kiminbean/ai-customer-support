@@ -64,7 +64,7 @@ function PipelineVisual({ activeStep, progress }: { activeStep: number; progress
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-6">
       <h3 className="text-sm font-semibold text-gray-900 mb-4">📋 데이터 파이프라인</h3>
       <div className="flex items-center gap-2">
         {steps.map((step, i) => (
@@ -115,7 +115,7 @@ function DomainCard({
       className={`text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
         isActive
           ? "border-[#2563EB] bg-blue-50 shadow-sm shadow-blue-100"
-          : "border-gray-100 bg-white hover:border-blue-200"
+          : "border-gray-200 bg-white hover:border-blue-200"
       }`}
     >
       <div className="text-2xl mb-2">{domain.icon || "📦"}</div>
@@ -141,7 +141,7 @@ function DatasetCard({
   const st = (dataset.status || "not_downloaded") as DatasetStatus;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-100">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-100">
       {/* Top row: name + badges */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">

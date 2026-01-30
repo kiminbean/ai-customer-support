@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Mobile Top Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 z-30 flex items-center justify-between px-4 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-4 lg:hidden">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
             <LogoIcon className="w-5 h-5 text-white" />

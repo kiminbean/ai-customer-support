@@ -244,7 +244,7 @@ export default function VoicePage() {
           </div>
 
           {/* ── Input Section ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <div
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
                 dragActive
@@ -358,9 +358,9 @@ export default function VoicePage() {
           {/* ── Results Section ── */}
           {!processing && transcript && document && (
             <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 {/* Tabs */}
-                <div className="flex border-b border-gray-100">
+                <div className="flex border-b border-gray-200">
                   <button
                     onClick={() => setActiveTab("transcript")}
                     className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${
@@ -442,7 +442,7 @@ export default function VoicePage() {
 
                       <div className="grid gap-4">
                         {document.document.qa_pairs.map((qa, idx) => (
-                          <div key={idx} className="border border-gray-100 rounded-xl p-4 hover:bg-blue-50/30 transition-colors">
+                          <div key={idx} className="border border-gray-200 rounded-xl p-4 hover:bg-blue-50/30 transition-colors">
                             <div className="flex justify-between items-start mb-2">
                               <span className="text-xs font-semibold text-[#2563EB] bg-blue-50 px-2 py-0.5 rounded">
                                 {qa.category}
@@ -457,7 +457,7 @@ export default function VoicePage() {
                         ))}
                       </div>
                       
-                      <div className="mt-6 border-t border-gray-100 pt-4">
+                      <div className="mt-6 border-t border-gray-200 pt-4">
                         <h4 className="text-sm font-semibold text-gray-900 mb-3">Markdown 미리보기</h4>
                         <pre className="bg-gray-900 text-gray-300 p-4 rounded-xl text-xs font-mono overflow-x-auto">
                           {document.preview}
@@ -465,7 +465,7 @@ export default function VoicePage() {
                       </div>
 
                       {/* Action */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                         {actionMsg ? (
                           <span className="text-green-600 text-sm font-medium animate-pulse">{actionMsg}</span>
                         ) : (
@@ -489,7 +489,7 @@ export default function VoicePage() {
           )}
 
           {/* ── Job History ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <button
               onClick={() => setShowHistory(!showHistory)}
               className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
@@ -508,7 +508,7 @@ export default function VoicePage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                        <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
                           <th className="pb-2 font-medium">파일명</th>
                           <th className="pb-2 font-medium">날짜</th>
                           <th className="pb-2 font-medium">상태</th>

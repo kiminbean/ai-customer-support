@@ -47,9 +47,9 @@ export default function WidgetPage() {
           {/* Preview */}
           <div>
             <h2 className="text-sm font-semibold text-gray-700 mb-3">실제 사이트 미리보기</h2>
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
               {/* Fake browser */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-100">
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -66,7 +66,7 @@ export default function WidgetPage() {
                   <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
                   <div className="grid grid-cols-3 gap-3">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="bg-white rounded-lg border border-gray-100 p-3">
+                      <div key={i} className="bg-white rounded-lg border border-gray-200 p-3">
                         <div className="w-full h-20 bg-gray-100 rounded-md mb-2" />
                         <div className="h-3 w-full bg-gray-100 rounded mb-1" />
                         <div className="h-3 w-2/3 bg-gray-100 rounded mb-2" />
@@ -79,7 +79,7 @@ export default function WidgetPage() {
                   <div className="h-4 w-5/6 bg-gray-100 rounded" />
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     {[1, 2].map((i) => (
-                      <div key={i} className="bg-white rounded-lg border border-gray-100 p-3">
+                      <div key={i} className="bg-white rounded-lg border border-gray-200 p-3">
                         <div className="w-full h-24 bg-gray-100 rounded-md mb-2" />
                         <div className="h-3 w-full bg-gray-100 rounded mb-1" />
                         <div className="h-3 w-1/2 bg-gray-100 rounded" />
@@ -124,7 +124,7 @@ export default function WidgetPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
                         </div>
-                        <div className="bg-white text-[11px] text-gray-700 px-3 py-2 rounded-xl rounded-tl-sm shadow-sm border border-gray-100">
+                        <div className="bg-white text-[11px] text-gray-700 px-3 py-2 rounded-xl rounded-tl-sm shadow-sm border border-gray-200">
                           안녕하세요! 👋 무엇을 도와드릴까요?
                         </div>
                       </div>
@@ -139,13 +139,13 @@ export default function WidgetPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
                         </div>
-                        <div className="bg-white text-[11px] text-gray-700 px-3 py-2 rounded-xl rounded-tl-sm shadow-sm border border-gray-100">
+                        <div className="bg-white text-[11px] text-gray-700 px-3 py-2 rounded-xl rounded-tl-sm shadow-sm border border-gray-200">
                           주문번호를 알려주시면 바로 확인해드리겠습니다! 📦
                         </div>
                       </div>
                     </div>
                     {/* Widget input */}
-                    <div className="p-2 border-t border-gray-100 bg-white">
+                    <div className="p-2 border-t border-gray-200 bg-white">
                       <div className="flex gap-1.5">
                         <input
                           type="text"
@@ -181,8 +181,8 @@ export default function WidgetPage() {
           {/* Embed code */}
           <div>
             <h2 className="text-sm font-semibold text-gray-700 mb-3">임베드 코드</h2>
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
                 <span className="text-xs font-medium text-gray-500">HTML</span>
                 <button
                   onClick={handleCopy}
@@ -201,7 +201,7 @@ export default function WidgetPage() {
             </div>
 
             {/* Instructions */}
-            <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">설치 방법</h3>
               <div className="space-y-4">
                 {[
@@ -240,13 +240,13 @@ export default function WidgetPage() {
             </div>
 
             {/* Supported platforms */}
-            <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">지원 플랫폼</h3>
               <div className="grid grid-cols-3 gap-3">
                 {["WordPress", "Shopify", "React", "Vue.js", "Wix", "기타 HTML"].map((platform) => (
                   <div
                     key={platform}
-                    className="px-3 py-2 bg-gray-50 rounded-lg text-xs text-center text-gray-600 font-medium border border-gray-100"
+                    className="px-3 py-2 bg-gray-50 rounded-lg text-xs text-center text-gray-600 font-medium border border-gray-200"
                   >
                     {platform}
                   </div>
