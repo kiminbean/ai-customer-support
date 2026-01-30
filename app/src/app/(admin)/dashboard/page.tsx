@@ -132,36 +132,75 @@ function Sidebar({ activeTab, setActiveTab, backendOnline }: { activeTab: TabTyp
 }
 
 // ── Overview Tab ──
-function OverviewTab({ backendOnline, conversations }: { backendOnline: boolean; conversations: Conversation[] }) {
-  const stats = MOCK_STATS;
+function OverviewTab({ backendOnline, conversations, analytics, documents, isLoading, isDemo }: {
+  backendOnline: boolean;
+  conversations: Conversation[];
+  analytics: Analytics | null;
+  documents: Document[];
+  isLoading: boolean;
+  isDemo: boolean;
+}) {
+  const stats = analytics ? [
+    { label: "총 대화 수", value: analytics.total_conversations.toLocaleString(), change: "+12.5%", icon: "💬" },
+    { label: "평균 응답 시간", value: analytics.avg_response_time, change: "-18.2%", icon: "⚡" },
+    { label: "고객 만족도", value: analytics.satisfaction_rate, change: "+2.1%", icon: "😊" },
+    { label: "활성 채팅", value: String(analytics.active_chats), change: "+5", icon: "🔥" },
+  ] : MOCK_STATS;
   const displayConversations = conversations.length > 0 ? conversations : MOCK_CONVERSATIONS;
+  const dailyChart = analytics?.daily_data || MOCK_DAILY_CHART;
+  const categoryData = analytics?.category_data || MOCK_CATEGORY_DATA;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">대시보드</h2>
-          <p className="text-sm text-gray-500 mt-1">오늘의 고객지원 현황을 한눈에 확인하세요</p>
+          <p className="text-sm text-gray-500 mt-1">
+            오늘의 고객지원 현황을 한눈에 확인하세요
+            {documents.length > 0 && <span> · 문서 {documents.length}건</span>}
+          </p>
         </div>
-        <BackendBadge online={backendOnline} />
+        <div className="flex items-center gap-2">
+          {isDemo && (
+            <span className="px-2.5 py-1 text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200 rounded-full">
+              데모 데이터
+            </span>
+          )}
+          <BackendBadge online={backendOnline} />
+        </div>
       </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white p-5 rounded-xl border border-gray-100">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                stat.change.startsWith("+") ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
-              }`}>{stat.change}</span>
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="w-8 h-8 bg-gray-200 rounded" />
+                <div className="w-12 h-5 bg-gray-200 rounded-full" />
+              </div>
+              <div className="mt-3">
+                <div className="w-20 h-7 bg-gray-200 rounded" />
+                <div className="w-16 h-3 bg-gray-100 rounded mt-2" />
+              </div>
             </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+          ))
+        ) : (
+          stats.map((stat) => (
+            <div key={stat.label} className="bg-white p-5 rounded-xl border border-gray-100">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">{stat.icon}</span>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  stat.change.startsWith("+") ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
+                }`}>{stat.change}</span>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Charts row */}
@@ -169,7 +208,7 @@ function OverviewTab({ backendOnline, conversations }: { backendOnline: boolean;
         <div className="bg-white p-6 rounded-xl border border-gray-100">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">주간 대화 추이</h3>
           <div className="flex items-end gap-3 h-40">
-            {MOCK_DAILY_CHART.map((d) => (
+            {dailyChart.map((d) => (
               <div key={d.day} className="flex-1 flex flex-col items-center gap-2">
                 <div className="w-full flex items-end justify-center" style={{ height: "120px" }}>
                   <div
@@ -186,7 +225,7 @@ function OverviewTab({ backendOnline, conversations }: { backendOnline: boolean;
         <div className="bg-white p-6 rounded-xl border border-gray-100">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">문의 카테고리 분포</h3>
           <div className="space-y-3">
-            {MOCK_CATEGORY_DATA.map((cat) => (
+            {categoryData.map((cat) => (
               <div key={cat.label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600">{cat.label}</span>
@@ -208,34 +247,47 @@ function OverviewTab({ backendOnline, conversations }: { backendOnline: boolean;
           <button className="text-xs text-[#2563EB] hover:underline font-medium">전체 보기</button>
         </div>
         <div className="divide-y divide-gray-50">
-          {displayConversations.slice(0, 5).map((conv) => (
-            <div key={conv.id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-gray-50/50 transition-colors cursor-pointer">
-              <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {conv.avatar || conv.user?.slice(0, 2) || "?"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{conv.user || `대화 #${conv.id}`}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    conv.status === "진행중" ? "bg-blue-50 text-[#2563EB]"
-                      : conv.status === "완료" ? "bg-green-50 text-green-600"
-                      : "bg-orange-50 text-orange-600"
-                  }`}>{conv.status}</span>
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="px-6 py-3.5 flex items-center gap-4 animate-pulse">
+                <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="w-24 h-4 bg-gray-200 rounded" />
+                  <div className="w-48 h-3 bg-gray-100 rounded mt-2" />
                 </div>
-                <p className="text-xs text-gray-500 truncate mt-0.5">{conv.last_message}</p>
+                <div className="w-12 h-3 bg-gray-100 rounded" />
               </div>
-              <div className="text-right shrink-0">
-                <div className="text-[10px] text-gray-400">{conv.time}</div>
-                {conv.satisfaction != null && (
-                  <div className="flex gap-0.5 mt-1 justify-end">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className={`text-[10px] ${i < conv.satisfaction! ? "text-yellow-400" : "text-gray-200"}`}>★</span>
-                    ))}
+            ))
+          ) : (
+            displayConversations.slice(0, 5).map((conv) => (
+              <div key={conv.id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-gray-50/50 transition-colors cursor-pointer">
+                <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {conv.avatar || conv.user?.slice(0, 2) || "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900">{conv.user || `대화 #${conv.id}`}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      conv.status === "진행중" ? "bg-blue-50 text-[#2563EB]"
+                        : conv.status === "완료" ? "bg-green-50 text-green-600"
+                        : "bg-orange-50 text-orange-600"
+                    }`}>{conv.status}</span>
                   </div>
-                )}
+                  <p className="text-xs text-gray-500 truncate mt-0.5">{conv.last_message}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] text-gray-400">{conv.time}</div>
+                  {conv.satisfaction != null && (
+                    <div className="flex gap-0.5 mt-1 justify-end">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <span key={i} className={`text-[10px] ${i < conv.satisfaction! ? "text-yellow-400" : "text-gray-200"}`}>★</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -243,7 +295,7 @@ function OverviewTab({ backendOnline, conversations }: { backendOnline: boolean;
 }
 
 // ── Conversations Tab ──
-function ConversationsTab({ conversations }: { conversations: Conversation[] }) {
+function ConversationsTab({ conversations, isLoading }: { conversations: Conversation[]; isLoading: boolean }) {
   const displayConversations = conversations.length > 0 ? conversations : MOCK_CONVERSATIONS;
 
   return (
@@ -275,36 +327,53 @@ function ConversationsTab({ conversations }: { conversations: Conversation[] }) 
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {displayConversations.map((conv) => (
-              <tr key={conv.id} className="hover:bg-gray-50/50 cursor-pointer transition-colors">
-                <td className="px-6 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold">
-                      {conv.avatar || conv.user?.slice(0, 2) || "?"}
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="px-6 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-200" />
+                      <div className="w-20 h-4 bg-gray-200 rounded" />
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{conv.user || `대화 #${conv.id}`}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-3.5 text-sm text-gray-500 max-w-xs truncate">{conv.last_message}</td>
-                <td className="px-6 py-3.5">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    conv.status === "진행중" ? "bg-blue-50 text-[#2563EB]"
-                      : conv.status === "완료" ? "bg-green-50 text-green-600"
-                      : "bg-orange-50 text-orange-600"
-                  }`}>{conv.status}</span>
-                </td>
-                <td className="px-6 py-3.5">
-                  {conv.satisfaction ? (
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <span key={i} className={`text-sm ${i < conv.satisfaction! ? "text-yellow-400" : "text-gray-200"}`}>★</span>
-                      ))}
+                  </td>
+                  <td className="px-6 py-3.5"><div className="w-48 h-4 bg-gray-200 rounded" /></td>
+                  <td className="px-6 py-3.5"><div className="w-16 h-5 bg-gray-200 rounded-full" /></td>
+                  <td className="px-6 py-3.5"><div className="w-20 h-4 bg-gray-200 rounded" /></td>
+                  <td className="px-6 py-3.5"><div className="w-12 h-3 bg-gray-100 rounded" /></td>
+                </tr>
+              ))
+            ) : (
+              displayConversations.map((conv) => (
+                <tr key={conv.id} className="hover:bg-gray-50/50 cursor-pointer transition-colors">
+                  <td className="px-6 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold">
+                        {conv.avatar || conv.user?.slice(0, 2) || "?"}
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">{conv.user || `대화 #${conv.id}`}</span>
                     </div>
-                  ) : <span className="text-xs text-gray-400">—</span>}
-                </td>
-                <td className="px-6 py-3.5 text-xs text-gray-400">{conv.time}</td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-6 py-3.5 text-sm text-gray-500 max-w-xs truncate">{conv.last_message}</td>
+                  <td className="px-6 py-3.5">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      conv.status === "진행중" ? "bg-blue-50 text-[#2563EB]"
+                        : conv.status === "완료" ? "bg-green-50 text-green-600"
+                        : "bg-orange-50 text-orange-600"
+                    }`}>{conv.status}</span>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    {conv.satisfaction ? (
+                      <div className="flex gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <span key={i} className={`text-sm ${i < conv.satisfaction! ? "text-yellow-400" : "text-gray-200"}`}>★</span>
+                        ))}
+                      </div>
+                    ) : <span className="text-xs text-gray-400">—</span>}
+                  </td>
+                  <td className="px-6 py-3.5 text-xs text-gray-400">{conv.time}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -727,31 +796,40 @@ export default function DashboardPage() {
   const backendOnline = useHealthCheck();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
 
-  // Load data from backend when online
+  // Fetch data on mount — fall back to demo mode if backend offline
   useEffect(() => {
-    if (!backendOnline) return;
-    const loadData = async () => {
+    async function fetchData() {
+      setIsLoading(true);
       try {
-        const [convs, stats] = await Promise.all([
-          getConversations().catch(() => []),
-          getAnalytics().catch(() => null),
+        const [analyticsData, convData, docsData] = await Promise.all([
+          getAnalytics(),
+          getConversations(),
+          getDocuments(),
         ]);
-        setConversations(convs);
-        if (stats) setAnalytics(stats);
+        setAnalytics(analyticsData);
+        setConversations(convData);
+        setDocuments(docsData);
+        setIsDemo(false);
       } catch {
-        // silently fail
+        // Backend offline — use mock data
+        setIsDemo(true);
+      } finally {
+        setIsLoading(false);
       }
-    };
-    loadData();
-  }, [backendOnline]);
+    }
+    fetchData();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} backendOnline={backendOnline} />
       <main className="flex-1 p-8 overflow-auto">
-        {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} conversations={conversations} />}
-        {activeTab === "conversations" && <ConversationsTab conversations={conversations} />}
+        {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} conversations={conversations} analytics={analytics} documents={documents} isLoading={isLoading} isDemo={isDemo} />}
+        {activeTab === "conversations" && <ConversationsTab conversations={conversations} isLoading={isLoading} />}
         {activeTab === "analytics" && <AnalyticsTab analytics={analytics} />}
         {activeTab === "knowledge" && <KnowledgeTab backendOnline={backendOnline} />}
         {activeTab === "settings" && <SettingsTab backendOnline={backendOnline} />}
