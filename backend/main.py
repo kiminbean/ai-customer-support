@@ -25,6 +25,7 @@ from agents.orchestrator import (
     process_message,
 )
 from rag.document_loader import delete_document, list_documents, load_file, load_sample_docs
+from datahub.routes import router as datahub_router
 
 # ── FastAPI 앱 ─────────────────────────────────────────────
 
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 데이터 허브 라우터 등록
+app.include_router(datahub_router)
 
 
 # ── Pydantic 모델 ─────────────────────────────────────────

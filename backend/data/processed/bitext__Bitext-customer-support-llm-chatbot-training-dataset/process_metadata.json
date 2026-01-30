@@ -1,0 +1,10 @@
+{
+  "dataset_id": "bitext/Bitext-customer-support-llm-chatbot-training-dataset",
+  "domain": "종합/멀티도메인",
+  "format": "intent-response",
+  "raw_records": 100,
+  "qa_pairs_extracted": 100,
+  "qa_pairs_deduplicated": 100,
+  "translated": false,
+  "processed_at": "2026-01-30 16:11:46"
+}

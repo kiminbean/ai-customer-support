@@ -217,3 +217,110 @@ export async function getImportedDatasets(): Promise<DatahubImportedDataset[]> {
   if (!res.ok) throw new Error(`Datahub imported error: ${res.status}`);
   return res.json();
 }
+
+// ── Crawler API ──
+
+export interface CrawlStartResponse {
+  job_id: string;
+}
+
+export interface CrawlStatus {
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  pages_crawled: number;
+  pages_total: number;
+  current_url?: string;
+}
+
+export interface CrawlFAQ {
+  question: string;
+  answer: string;
+  sourceUrl: string;
+}
+
+export interface CrawlArticle {
+  title: string;
+  content: string;
+  sourceUrl: string;
+}
+
+export interface CrawlProduct {
+  name: string;
+  description: string;
+  sourceUrl: string;
+}
+
+export interface CrawlPolicy {
+  title: string;
+  content: string;
+  sourceUrl: string;
+}
+
+export interface CrawlResults {
+  pages?: number;
+  faqs: CrawlFAQ[];
+  articles: CrawlArticle[];
+  products: CrawlProduct[];
+  policies: CrawlPolicy[];
+}
+
+export interface CrawlJob {
+  job_id: string;
+  url: string;
+  status: string;
+  created_at: string;
+  pages_crawled?: number;
+  items_found?: number;
+}
+
+export async function startCrawl(
+  url: string,
+  options?: { maxDepth?: number; maxPages?: number; includePatterns?: string[]; extractMode?: string }
+): Promise<CrawlStartResponse> {
+  const res = await fetch(`${API_BASE}/api/crawler/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      url,
+      max_depth: options?.maxDepth,
+      max_pages: options?.maxPages,
+      include_patterns: options?.includePatterns,
+      extract_mode: options?.extractMode,
+    }),
+  });
+  if (!res.ok) throw new Error(`Crawler start error: ${res.status}`);
+  return res.json();
+}
+
+export async function getCrawlStatus(jobId: string): Promise<CrawlStatus> {
+  const res = await fetch(`${API_BASE}/api/crawler/status/${encodeURIComponent(jobId)}`);
+  if (!res.ok) throw new Error(`Crawler status error: ${res.status}`);
+  return res.json();
+}
+
+export async function getCrawlResults(jobId: string): Promise<CrawlResults> {
+  const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}`);
+  if (!res.ok) throw new Error(`Crawler results error: ${res.status}`);
+  return res.json();
+}
+
+export async function convertCrawlResults(jobId: string, selectedItems?: number[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}/convert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selected_items: selectedItems }),
+  });
+  if (!res.ok) throw new Error(`Crawler convert error: ${res.status}`);
+}
+
+export async function importCrawlResults(jobId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/crawler/results/${encodeURIComponent(jobId)}/import`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error(`Crawler import error: ${res.status}`);
+}
+
+export async function getCrawlJobs(): Promise<CrawlJob[]> {
+  const res = await fetch(`${API_BASE}/api/crawler/jobs`);
+  if (!res.ok) throw new Error(`Crawler jobs error: ${res.status}`);
+  return res.json();
+}
