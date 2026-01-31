@@ -12,7 +12,6 @@ import {
   type CrawlResults,
   type CrawlJob,
 } from "@/lib/api";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { BackendBadge } from "@/components/BackendBadge";
 import { MOCK_CRAWL_RESULTS, MOCK_CRAWL_JOBS } from "@/data/mock-crawl";
 
@@ -308,12 +307,8 @@ export default function CrawlerPage() {
   const totalItems = tabCounts.faqs + tabCounts.articles + tabCounts.products + tabCounts.policies;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar activePage="crawler" backendOnline={backendOnline} />
-
-      {/* Main content */}
-      <main className="flex-1 p-8 overflow-auto">
-        <div className="max-w-5xl mx-auto space-y-6">
+    <div className="p-8 overflow-auto">
+      <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -742,7 +737,6 @@ export default function CrawlerPage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }

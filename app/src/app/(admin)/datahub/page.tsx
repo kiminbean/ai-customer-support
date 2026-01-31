@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { BackendBadge } from "@/components/BackendBadge";
 import { useHealthCheck } from "@/hooks/useHealthCheck";
 import {
@@ -515,12 +514,8 @@ export default function DataHubPage() {
     : displayDatasets;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar activePage="datahub" backendOnline={backendOnline} />
-
-      {/* Main content */}
-      <main className="flex-1 p-8 overflow-auto">
-        <div className="max-w-6xl mx-auto space-y-6">
+    <div className="p-8 overflow-auto">
+      <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -610,7 +605,6 @@ export default function DataHubPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }

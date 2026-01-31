@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
 import { BackendBadge } from "@/components/BackendBadge";
 import { useHealthCheck } from "@/hooks/useHealthCheck";
 import {
@@ -57,79 +56,6 @@ const AI_SETTINGS_DEFAULT = {
 };
 
 type TabType = "overview" | "conversations" | "analytics" | "knowledge" | "settings";
-
-// ── Sidebar ──
-function Sidebar({ activeTab, setActiveTab, backendOnline }: { activeTab: TabType; setActiveTab: (t: TabType) => void; backendOnline: boolean }) {
-  const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
-    {
-      id: "overview", label: "개요",
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-    },
-    {
-      id: "conversations", label: "대화 내역",
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
-    },
-    {
-      id: "analytics", label: "분석",
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-    },
-    {
-      id: "knowledge", label: "지식베이스",
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
-    },
-    {
-      id: "settings", label: "설정",
-      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-    },
-  ];
-
-  return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          </div>
-          <span className="text-lg font-bold text-gray-900">SupportAI</span>
-        </Link>
-      </div>
-      <nav className="flex-1 p-3">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mb-1 ${
-              activeTab === tab.id ? "bg-blue-50 text-[#2563EB]" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-        <div className="border-t border-gray-200 my-2" />
-        <Link
-          href="/datahub"
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all mb-1"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-          데이터 허브
-        </Link>
-      </nav>
-      <div className="p-4 border-t border-gray-200 space-y-3">
-        <BackendBadge online={backendOnline} />
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">IB</div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 truncate">관리자</div>
-            <div className="text-xs text-gray-400">Pro 플랜</div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 // ── Overview Tab ──
 function OverviewTab({ backendOnline, conversations, analytics, documents, isLoading, isDemo }: {
@@ -825,15 +751,37 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} backendOnline={backendOnline} />
-      <main className="flex-1 p-8 overflow-auto">
-        {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} conversations={conversations} analytics={analytics} documents={documents} isLoading={isLoading} isDemo={isDemo} />}
-        {activeTab === "conversations" && <ConversationsTab conversations={conversations} isLoading={isLoading} />}
-        {activeTab === "analytics" && <AnalyticsTab analytics={analytics} />}
-        {activeTab === "knowledge" && <KnowledgeTab backendOnline={backendOnline} />}
-        {activeTab === "settings" && <SettingsTab backendOnline={backendOnline} />}
-      </main>
+    <div className="p-8 space-y-6">
+      {/* Horizontal tab bar */}
+      <div className="flex items-center gap-1 bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
+        {([
+          { id: "overview" as const, label: "개요", icon: "🏠" },
+          { id: "conversations" as const, label: "대화 내역", icon: "💬" },
+          { id: "analytics" as const, label: "분석", icon: "📊" },
+          { id: "knowledge" as const, label: "지식베이스", icon: "📚" },
+          { id: "settings" as const, label: "설정", icon: "⚙️" },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab.id
+                ? "bg-blue-50 text-[#2563EB]"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <span>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} conversations={conversations} analytics={analytics} documents={documents} isLoading={isLoading} isDemo={isDemo} />}
+      {activeTab === "conversations" && <ConversationsTab conversations={conversations} isLoading={isLoading} />}
+      {activeTab === "analytics" && <AnalyticsTab analytics={analytics} />}
+      {activeTab === "knowledge" && <KnowledgeTab backendOnline={backendOnline} />}
+      {activeTab === "settings" && <SettingsTab backendOnline={backendOnline} />}
     </div>
   );
 }

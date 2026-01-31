@@ -17,7 +17,6 @@ import {
   type VoiceJob,
   type VoiceQAPair,
 } from "@/lib/api";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { BackendBadge } from "@/components/BackendBadge";
 
 type ResultTab = "transcript" | "document";
@@ -227,11 +226,8 @@ export default function VoicePage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar activePage="voice" backendOnline={backendOnline} />
-
-      <main className="flex-1 p-8 overflow-auto">
-        <div className="max-w-5xl mx-auto space-y-6">
+    <div className="p-8 overflow-auto">
+      <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -553,7 +549,6 @@ export default function VoicePage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
