@@ -24,10 +24,20 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 DEMO_MODE = not bool(OPENAI_API_KEY)
 
 # ── API 인증 설정 ─────────────────────────────────────────
+# NOTE: API_KEY should be server-side only. Do NOT set NEXT_PUBLIC_API_KEY in frontend.
+# For production, implement proper session/token-based authentication.
 API_KEY = os.getenv("API_KEY", "").strip()
+
+# ── 요청 제한 설정 ───────────────────────────────────────
+MAX_REQUEST_SIZE = int(os.getenv("MAX_REQUEST_SIZE", str(10 * 1024 * 1024)))  # 10MB
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))  # 30 seconds
+MAX_CONCURRENT_JOBS = int(os.getenv("MAX_CONCURRENT_JOBS", "5"))  # 최대 동시 작업 수
 
 # ── 로깅 설정 ─────────────────────────────────────────────
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").strip()
+
+# ── 백업 설정 ─────────────────────────────────────────────
+BACKUP_RETENTION_DAYS = int(os.getenv("BACKUP_RETENTION_DAYS", "30"))
 
 # ── Sentry 설정 ───────────────────────────────────────────
 SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()

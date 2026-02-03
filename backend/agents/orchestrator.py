@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import html
 import logging
 import uuid
 from datetime import datetime
@@ -16,6 +17,22 @@ from typing import Dict, List, Optional
 from agents import escalation_agent, faq_agent, order_agent
 
 logger = logging.getLogger(__name__)
+
+
+# ── 입력 Sanitization (XSS 방지) ────────────────────────────────
+
+def sanitize_message(message: str) -> str:
+    """
+    사용자 입력에서 HTML 엔티티를 이스케이프하여 XSS 방지.
+    최대 길이도 제한.
+    """
+    if not message:
+        return ""
+    # 최대 길이 제한 (DoS 방지)
+    message = message[:5000]
+    # HTML 엔티티 이스케이프
+    return html.escape(message)
+
 
 # ── 대화 메모리 (인메모리 캐시 + SQLite 영속화) ───────────────
 
@@ -148,18 +165,21 @@ async def process_message(
     conv = _get_or_create_conversation(conversation_id)
     conv_id = conv["id"]
 
+    # 입력 sanitization
+    sanitized_message = sanitize_message(message)
+
     # 1. 의도 분류
-    intent = classify_intent(message)
+    intent = classify_intent(sanitized_message)
 
     # 2. 서브에이전트 라우팅
     if intent == Intent.GREETING:
-        result = _handle_greeting(message)
+        result = _handle_greeting(sanitized_message)
     elif intent == Intent.ESCALATION:
-        result = escalation_agent.handle(message, conversation_id=conv_id)
+        result = escalation_agent.handle(sanitized_message, conversation_id=conv_id)
     elif intent == Intent.ORDER:
-        result = order_agent.handle(message, conversation_id=conv_id)
+        result = order_agent.handle(sanitized_message, conversation_id=conv_id)
     else:  # FAQ
-        result = faq_agent.handle(message, conversation_id=conv_id)
+        result = faq_agent.handle(sanitized_message, conversation_id=conv_id)
 
     # 3. FAQ 응답의 에스컬레이션 재확인
     if intent == Intent.FAQ and result.get("confidence", 1.0) < 0.3:
@@ -171,7 +191,7 @@ async def process_message(
     # 4. 대화 기록 저장
     conv["messages"].append({
         "role": "user",
-        "content": message,
+        "content": sanitized_message,
         "timestamp": datetime.now().isoformat(),
     })
     conv["messages"].append({

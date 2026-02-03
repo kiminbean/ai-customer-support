@@ -5,8 +5,6 @@ RAG + Deep Agents 기반 지능형 고객지원 시스템
 실행: uvicorn main:app --reload --port 8000
 """
 
-from __future__ import annotations
-
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -26,6 +24,26 @@ from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
 import config
+
+
+# ── 요청 크기 제한 미들웨어 ────────────────────────────────
+
+class RequestSizeMiddleware(BaseHTTPMiddleware):
+    """요청 본문 크기 제한 미들웨어"""
+
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                content_length = int(content_length)
+                if content_length > config.MAX_REQUEST_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"요청 크기가 너무 큽니다. 최대 {config.MAX_REQUEST_SIZE // (1024*1024)}MB까지 허용됩니다.",
+                    )
+            except ValueError:
+                pass
+        return await call_next(request)
 from agents.orchestrator import (
     get_analytics,
     get_conversation,
@@ -36,6 +54,8 @@ from agents.orchestrator import (
 from auth import api_key_auth_middleware
 from crawler.routes import router as crawler_router
 from database import init_db
+from database_backup import create_backup, init_backup, list_backups as get_backup_list
+from job_persistence import clear_old_jobs, init_job_persistence
 from logging_config import setup_logging
 from middleware import CorrelationIdMiddleware
 from rag.document_loader import delete_document, list_documents, load_file, load_sample_docs
@@ -68,6 +88,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     await init_db()
     await init_conversations()
+
+    # 백업 초기화
+    init_backup()
+
+    # 잡 영속화 초기화
+    init_job_persistence()
+
+    # 오래된 잡 정리 (24시간 이상)
+    clear_old_jobs(max_age_hours=24)
 
     loaded = load_sample_docs()
     mode = "데모 모드" if config.DEMO_MODE else "프로덕션 모드"
@@ -103,6 +132,7 @@ app.include_router(voice_router)
 app.add_middleware(BaseHTTPMiddleware, dispatch=api_key_auth_middleware)
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(RequestSizeMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
@@ -152,6 +182,10 @@ async def chat(request: Request, body: ChatRequest):
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="메시지를 입력해 주세요.")
 
+    # 메시지 길이 제한 (DoS 방지)
+    if len(body.message) > 5000:
+        raise HTTPException(status_code=400, detail="메시지가 너무 깁니다. 최대 5000자까지 허용됩니다.")
+
     result = await process_message(
         message=body.message,
         conversation_id=body.conversation_id,
@@ -171,7 +205,7 @@ async def chat(request: Request, body: ChatRequest):
 
 
 # 2. 문서 업로드
-@app.post("/api/documents/upload")
+@app.post("/api/documents/upload", response_model=None)
 @limiter.limit("10/minute")
 async def upload_document(request: Request, file: UploadFile = File(...)):
     """
@@ -194,8 +228,15 @@ async def upload_document(request: Request, file: UploadFile = File(...)):
     if not save_path.resolve().is_relative_to(config.UPLOAD_DIR.resolve()):
         raise HTTPException(status_code=400, detail="잘못된 파일명입니다.")
 
+    content = await file.read()
+    # 요청 크기 다시 확인 (미들웨어 우회 방지)
+    if len(content) > config.MAX_REQUEST_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"파일 크기가 너무 큽니다. 최대 {config.MAX_REQUEST_SIZE // (1024*1024)}MB까지 허용됩니다.",
+        )
+
     with open(save_path, "wb") as f:
-        content = await file.read()
         f.write(content)
 
     # 벡터 스토어에 저장
@@ -332,6 +373,36 @@ async def health():
         "documents_loaded": len(docs),
         "timestamp": datetime.now().isoformat(),
     }
+
+
+# 10. 백업 관리
+@app.get("/api/backups")
+@limiter.limit("10/minute")
+async def list_backups_endpoint(request: Request):
+    """백업 목록 조회"""
+    backups = get_backup_list()
+    return {
+        "backups": backups,
+        "total": len(backups),
+        "retention_days": config.BACKUP_RETENTION_DAYS,
+    }
+
+
+@app.post("/api/backups/create")
+@limiter.limit("2/hour")
+async def create_manual_backup(request: Request):
+    """수동 백업 생성"""
+    success = create_backup()
+    if success:
+        return {
+            "status": "success",
+            "message": "백업 생성 완료",
+        }
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail="백업 생성 실패",
+        )
 
 
 # ── 로컬 실행 ─────────────────────────────────────────────

@@ -187,14 +187,63 @@ async def start_crawl(request: CrawlStartRequest, background_tasks: BackgroundTa
 
     # SSRF 방지: 내부 네트워크 URL 차단
     parsed = urlparse(url)
+
+    # 스킴 검증
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(
+            status_code=400,
+            detail="http/https 프로토콜만 허용됩니다.",
+        )
+
     hostname = parsed.hostname or ""
+    if not hostname:
+        raise HTTPException(status_code=400, detail="유효하지 않은 URL입니다.")
+
+    # 도메인 검증 (TLD 확인)
+    if "." not in hostname or hostname.startswith("."):
+        raise HTTPException(
+            status_code=400,
+            detail="유효하지 않은 도메인입니다.",
+        )
+
+    # 금지된 도메인 목록
+    BLOCKED_DOMAINS = {
+        "localhost", "127.0.0.1", "0.0.0.0",
+        "metadata.google.internal", "169.254.169.254",
+    }
+    if hostname in BLOCKED_DOMAINS:
+        raise HTTPException(
+            status_code=400,
+            detail="내부 네트워크 URL은 사용할 수 없습니다.",
+        )
+
     try:
         resolved_ip = ipaddress.ip_address(socket.gethostbyname(hostname))
-        if resolved_ip.is_private or resolved_ip.is_loopback or resolved_ip.is_link_local:
+
+        # Private IP 범위 체크
+        if (
+            resolved_ip.is_private
+            or resolved_ip.is_loopback
+            or resolved_ip.is_link_local
+        ):
             raise HTTPException(
                 status_code=400,
                 detail="내부 네트워크 URL은 사용할 수 없습니다.",
             )
+
+        # 추가 내부 IP 범위 체크 (CNAT 등)
+        blocked_ranges = [
+            ipaddress.ip_network("100.64.0.0/10"),  # RFC 6598
+            ipaddress.ip_network("192.0.0.0/24"),   # IANA reserved
+            ipaddress.ip_network("192.0.2.0/24"),   # TEST-NET
+            ipaddress.ip_network("198.18.0.0/15"),  # benchmarking
+        ]
+        if any(resolved_ip in network for network in blocked_ranges):
+            raise HTTPException(
+                status_code=400,
+                detail="내부 네트워크 URL은 사용할 수 없습니다.",
+            )
+
     except socket.gaierror:
         raise HTTPException(status_code=400, detail=f"호스트를 찾을 수 없습니다: {hostname}")
 
