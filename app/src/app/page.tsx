@@ -1,5 +1,15 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "AI 고객지원 플랫폼 - 스마트 고객 서비스 자동화",
+  description: "AI 기반 고객지원 자동화 플랫폼. 24시간 자동 응답, 다국어 지원, 실시간 분석 대시보드로 고객 만족도를 극대화하세요.",
+  openGraph: {
+    title: "AI 고객지원 플랫폼 | SupportAI",
+    description: "AI 기반 고객지원 자동화 플랫폼. 24시간 자동 응답, 다국어 지원, 실시간 분석 대시보드를 제공합니다.",
+  },
+};
 
 function HeroSection() {
   return (
