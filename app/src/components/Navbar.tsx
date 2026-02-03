@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LogoIcon } from "@/components/icons";
+import { useI18n, LanguageSwitcher } from "@/lib/i18n";
 
 interface NavbarProps {
   variant?: "landing" | "app";
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 export function Navbar({ variant = "landing", activePage }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
@@ -59,14 +61,15 @@ export function Navbar({ variant = "landing", activePage }: NavbarProps) {
           
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher className="border-gray-200 text-gray-600" />
             <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block">
-              로그인
+              {t("nav.login")}
             </Link>
             <Link
               href="/demo"
               className="px-4 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors shadow-sm"
             >
-              무료 시작하기
+              {t("nav.signup")}
             </Link>
           </div>
 
