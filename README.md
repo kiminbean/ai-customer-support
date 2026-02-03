@@ -1,164 +1,200 @@
 # AI Customer Support Platform
 
-> RAG + Deep Agents 기반 AI 고객지원 SaaS 플랫폼
+> 🤖 RAG + Multi-Agent 기반 차세대 AI 고객지원 SaaS 플랫폼
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com/)
+
+[🇰🇷 한국어](#한국어) | [🇺🇸 English](#english)
 
 ---
 
-## 현재 구현 상태
+## 한국어
 
-| 기능 | 상태 | 설명 |
-|------|------|------|
-| AI 채팅 | 구현 완료 | RAG 검색 + 의도 분류 + 에이전트 라우팅 |
-| 지식베이스 | 구현 완료 | TXT/MD/PDF 업로드, TF-IDF 벡터 검색 |
-| 웹 크롤러 | 구현 완료 | URL 입력 → FAQ/콘텐츠 추출 → RAG 가져오기 |
-| 데이터 허브 | 구현 완료 | HuggingFace 데이터셋 탐색/다운로드/변환 |
-| 음성 파이프라인 | 구현 완료 | 음성 → STT → Q&A 문서 생성 |
-| 관리 대시보드 | 구현 완료 | 통계, 대화 관리, 지식베이스, 설정 |
-| 데모 모드 | 구현 완료 | API 키 없이 모든 기능 동작 |
+### ✨ 주요 기능
 
----
+| 기능 | 설명 | 상태 |
+|------|------|:----:|
+| 🤖 **AI 채팅** | RAG 검색 + 의도 분류 + 멀티에이전트 라우팅 | ✅ |
+| 📚 **지식베이스** | TXT/MD/PDF 업로드, TF-IDF 벡터 검색 | ✅ |
+| 🌐 **웹 크롤러** | URL → FAQ/콘텐츠 자동 추출 → RAG 가져오기 | ✅ |
+| 📊 **데이터 허브** | HuggingFace 데이터셋 탐색/다운로드/변환 | ✅ |
+| 🎙️ **음성 파이프라인** | 음성 → STT → Q&A 문서 자동 생성 | ✅ |
+| 📈 **관리 대시보드** | 통계, 대화 관리, 지식베이스, 설정 | ✅ |
+| 🌍 **다국어 지원** | 한국어/영어 UI (자동 감지) | ✅ |
+| 🎭 **데모 모드** | API 키 없이 모든 기능 동작 | ✅ |
 
-## 기술 스택
+### 🛠️ 기술 스택
 
-### Backend
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| Python | 3.14 | 백엔드 언어 |
-| FastAPI | 0.115 | REST API 서버 |
-| scikit-learn | 1.6+ | TF-IDF 벡터 검색 (RAG) |
-| LangChain | 0.3+ | 텍스트 분할, LLM 연동 |
-| Pydantic | 2.x | 요청/응답 모델 검증 |
+**Backend**
+- Python 3.12+ / FastAPI 0.115
+- scikit-learn (TF-IDF 벡터 검색)
+- LangChain (텍스트 분할, LLM 연동)
+- SQLite + aiosqlite (비동기 영속화)
 
-### Frontend
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| Next.js | 16 | React 프레임워크 |
-| React | 19 | UI 라이브러리 |
-| TypeScript | strict | 타입 안전성 |
-| Tailwind CSS | v4 | 스타일링 |
+**Frontend**
+- Next.js 16 (App Router)
+- React 19 + TypeScript
+- Tailwind CSS v4
 
-### 저장소
-- 인메모리 + JSON 파일 영속화 (MVP 단계)
-- 벡터 스토어: TF-IDF + cosine similarity
+### 🚀 빠른 시작
 
----
-
-## 프로젝트 구조
-
-```
-ai-customer-support/
-├── app/                          # Next.js 16 프론트엔드
-│   ├── src/app/                  # App Router 페이지
-│   │   ├── page.tsx              # 랜딩 페이지
-│   │   ├── demo/page.tsx         # 채팅 데모
-│   │   ├── dashboard/page.tsx    # 관리 대시보드
-│   │   ├── datahub/page.tsx      # 데이터 허브
-│   │   ├── crawler/page.tsx      # 웹 크롤러
-│   │   └── widget/page.tsx       # 위젯 미리보기
-│   └── src/lib/api.ts            # 백엔드 API 클라이언트
-│
-├── backend/                      # FastAPI 백엔드
-│   ├── main.py                   # 앱 진입점 + 라우트 등록
-│   ├── config.py                 # 설정 (환경변수, 경로, RAG 파라미터)
-│   ├── agents/                   # Deep Agent (orchestrator → sub-agents)
-│   ├── rag/                      # RAG 파이프라인 (loader → retriever → vector_store)
-│   ├── crawler/                  # 웹 크롤링 → 콘텐츠 추출 → RAG 변환
-│   ├── datahub/                  # HuggingFace 데이터셋 탐색/처리/가져오기
-│   ├── voice/                    # 음성 → STT → Q&A 문서 생성
-│   └── tests/                    # 통합 테스트 (FastAPI TestClient)
-│
-└── docs/                         # 사업 문서
-    ├── 사업계획서.md
-    ├── 시장분석.md
-    └── 경쟁사_분석.md
-```
-
----
-
-## 시작하기
-
-### 사전 요구사항
-
+#### 사전 요구사항
 - Python 3.12+
 - Node.js 20+
 
-### Backend 설정
-
+#### Backend 설정
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# 환경변수 설정 (선택 — 없으면 데모 모드)
+# (선택) 환경변수 설정 — 없으면 데모 모드
 cp .env.example .env
-# .env 파일에서 OPENAI_API_KEY 설정 (선택)
+# OPENAI_API_KEY=sk-xxx
 
 # 서버 실행
 uvicorn main:app --reload --port 8000
 ```
 
-Swagger 문서: http://localhost:8000/docs
-
-### Frontend 설정
-
+#### Frontend 설정
 ```bash
 cd app
 npm install
 npm run dev
 ```
 
-http://localhost:3000 에서 접속
+- 프론트엔드: http://localhost:3000
+- API 문서 (Swagger): http://localhost:8000/docs
 
-### 데모 모드
+### 🔐 데모 모드
 
-**API 키 없이도 모든 기능이 동작합니다.**
+**API 키 없이도 모든 기능이 완전히 동작합니다:**
 - 채팅: 한국어 키워드 기반 자동 응답 (배송, 반품, 교환 등)
 - 크롤러: SmartMall 데모 데이터
 - 데이터 허브: 샘플 데이터셋
 - 음성: 데모 통화 녹취록
 
----
+### 📁 프로젝트 구조
 
-## API 엔드포인트
+```
+ai-customer-support/
+├── app/                          # Next.js 프론트엔드
+│   ├── src/app/                  # App Router 페이지
+│   │   ├── (admin)/              # 관리자 페이지 그룹
+│   │   │   ├── dashboard/        # 대시보드
+│   │   │   ├── datahub/          # 데이터 허브
+│   │   │   ├── crawler/          # 웹 크롤러
+│   │   │   └── voice/            # 음성 분석
+│   │   ├── demo/                 # 채팅 데모
+│   │   └── widget/               # 위젯 미리보기
+│   └── src/lib/                  # 유틸리티
+│       ├── api.ts                # API 클라이언트
+│       └── i18n/                 # 다국어 지원
+│
+├── backend/                      # FastAPI 백엔드
+│   ├── main.py                   # 앱 진입점
+│   ├── agents/                   # 멀티에이전트 시스템
+│   ├── rag/                      # RAG 파이프라인
+│   ├── crawler/                  # 웹 크롤링
+│   ├── datahub/                  # 데이터 허브
+│   ├── voice/                    # 음성 처리
+│   └── tests/                    # 테스트 (93개)
+│
+└── docs/                         # 사업 문서
+```
 
-| Method | Path | 설명 |
-|--------|------|------|
-| POST | `/api/chat` | AI 채팅 (의도 분류 → 에이전트 라우팅) |
-| POST | `/api/documents/upload` | 문서 업로드 (.txt, .md, .pdf) |
-| GET | `/api/documents` | 문서 목록 |
-| GET | `/api/conversations` | 대화 목록 |
-| GET | `/api/analytics` | 분석 통계 |
-| GET | `/api/health` | 헬스 체크 |
-| | `/api/crawler/*` | 웹 크롤링 (9개 엔드포인트) |
-| | `/api/datahub/*` | 데이터 허브 (12개 엔드포인트) |
-| | `/api/voice/*` | 음성 파이프라인 (7개 엔드포인트) |
-
-전체 API 문서: http://localhost:8000/docs
-
----
-
-## 테스트
+### 🧪 테스트
 
 ```bash
 cd backend
 source venv/bin/activate
-pytest -v                    # 전체 테스트
-pytest tests/test_api.py     # API 통합 테스트
+pytest -v                    # 전체 테스트 (93개)
+pytest tests/test_api.py     # API 테스트 (18개)
+pytest tests/test_crawler.py # 크롤러 테스트 (30개)
 ```
+
+### 📡 API 엔드포인트
+
+| Method | Path | 설명 |
+|--------|------|------|
+| POST | `/api/chat` | AI 채팅 |
+| POST | `/api/documents/upload` | 문서 업로드 |
+| GET | `/api/documents` | 문서 목록 |
+| GET | `/api/conversations` | 대화 목록 |
+| GET | `/api/analytics` | 분석 통계 |
+| GET | `/api/health` | 헬스 체크 |
+| | `/api/crawler/*` | 웹 크롤링 (9개) |
+| | `/api/datahub/*` | 데이터 허브 (12개) |
+| | `/api/voice/*` | 음성 처리 (7개) |
+
+### 🔧 환경 변수
+
+| 변수 | 설명 | 기본값 |
+|------|------|--------|
+| `OPENAI_API_KEY` | OpenAI API 키 | 없음 (데모 모드) |
+| `NEXT_PUBLIC_API_URL` | 백엔드 URL | http://localhost:8000 |
+| `API_KEY` | 백엔드 인증 키 | 없음 (인증 없음) |
+| `SENTRY_DSN` | 에러 트래킹 | 없음 |
 
 ---
 
-## 사업 문서
+## English
 
-| 문서 | 링크 |
-|------|------|
-| 사업계획서 | [docs/사업계획서.md](docs/사업계획서.md) |
-| 시장분석 | [docs/시장분석.md](docs/시장분석.md) |
-| 경쟁사 분석 | [docs/경쟁사_분석.md](docs/경쟁사_분석.md) |
-| 기술 아키텍처 | [docs/기술_아키텍처.md](docs/기술_아키텍처.md) |
-| 수익모델/재무전망 | [docs/수익모델_재무전망.md](docs/수익모델_재무전망.md) |
-| GTM 전략 | [docs/GTM_전략.md](docs/GTM_전략.md) |
-| 실행 로드맵 | [docs/실행_로드맵.md](docs/실행_로드맵.md) |
-| 피치덱 스크립트 | [docs/피치덱_스크립트.md](docs/피치덱_스크립트.md) |
-| 법률/규제 가이드 | [docs/법률_규제_가이드.md](docs/법률_규제_가이드.md) |
+### ✨ Key Features
+
+| Feature | Description | Status |
+|---------|-------------|:------:|
+| 🤖 **AI Chat** | RAG search + Intent classification + Multi-agent routing | ✅ |
+| 📚 **Knowledge Base** | TXT/MD/PDF upload, TF-IDF vector search | ✅ |
+| 🌐 **Web Crawler** | URL → Auto FAQ/content extraction → RAG import | ✅ |
+| 📊 **Data Hub** | HuggingFace dataset explore/download/transform | ✅ |
+| 🎙️ **Voice Pipeline** | Voice → STT → Auto Q&A document generation | ✅ |
+| 📈 **Admin Dashboard** | Statistics, conversation management, settings | ✅ |
+| 🌍 **Multilingual** | Korean/English UI (auto-detect) | ✅ |
+| 🎭 **Demo Mode** | All features work without API key | ✅ |
+
+### 🚀 Quick Start
+
+#### Prerequisites
+- Python 3.12+
+- Node.js 20+
+
+#### Backend Setup
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+#### Frontend Setup
+```bash
+cd app
+npm install
+npm run dev
+```
+
+- Frontend: http://localhost:3000
+- API Docs: http://localhost:8000/docs
+
+### 🧪 Testing
+
+```bash
+cd backend
+pytest -v  # 93 tests
+```
+
+### 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Built with ❤️ for modern customer support
+</p>
