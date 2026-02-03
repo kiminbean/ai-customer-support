@@ -31,11 +31,12 @@ Korean-first UX, demo mode (no API key required).
 ```bash
 source venv/bin/activate
 uvicorn main:app --reload --port 8000           # Dev server
-pytest                                           # All 93 tests
+pytest                                           # All 96 tests
 pytest tests/test_api.py                           # API tests (18)
 pytest tests/test_crawler.py                       # Crawler tests (30)
 pytest tests/test_datahub.py                       # Datahub tests (33)
 pytest tests/test_voice.py                         # Voice tests (12)
+# Missing 13 tests - some modules may have uncommitted tests
 pytest tests/ -v --cov=. --cov-report=term-missing # Coverage
 ```
 
@@ -77,6 +78,7 @@ cd app && npm run build
 - App Router with `(admin)/` route group for shared sidebar layout
 - Server components default, `"use client"` only when needed
 - All API calls through `src/lib/api.ts` (no hardcoded URLs)
+- Dashboard uses modular tab components (OverviewTab, AnalyticsTab, ConversationsTab)
 
 ### Data Flow
 - Knowledge sources → Crawler/Datahub/Voice → RAG pipeline → Vector store
