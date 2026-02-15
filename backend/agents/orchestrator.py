@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import html
 import logging
 import uuid
@@ -206,7 +207,7 @@ async def process_message(
     })
     conv["updated_at"] = datetime.now().isoformat()
 
-    await _persist_conversation(conv)
+    asyncio.create_task(_persist_conversation(conv))
 
     # 5. 응답 구성
     result["conversation_id"] = conv_id

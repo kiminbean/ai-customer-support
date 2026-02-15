@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 API 테스트 — 기본 엔드포인트 동작 확인
 데모 모드에서 실행 (API 키 불필요)
