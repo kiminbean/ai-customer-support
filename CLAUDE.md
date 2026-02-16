@@ -31,12 +31,11 @@ Korean-first UX, demo mode (no API key required).
 ```bash
 source venv/bin/activate
 uvicorn main:app --reload --port 8000           # Dev server
-pytest                                           # All 96 tests
-pytest tests/test_api.py                           # API tests (18)
-pytest tests/test_crawler.py                       # Crawler tests (30)
-pytest tests/test_datahub.py                       # Datahub tests (33)
-pytest tests/test_voice.py                         # Voice tests (12)
-# Missing 13 tests - some modules may have uncommitted tests
+pytest                                           # All 93 tests
+pytest tests/test_api.py                         # API tests (18)
+pytest tests/test_crawler.py                     # Crawler tests (30)
+pytest tests/test_datahub.py                     # Datahub tests (33)
+pytest tests/test_voice.py                       # Voice tests (12)
 pytest tests/ -v --cov=. --cov-report=term-missing # Coverage
 ```
 
@@ -45,6 +44,7 @@ pytest tests/ -v --cov=. --cov-report=term-missing # Coverage
 npm run dev       # Dev server (port 3000)
 npm run build     # Production build
 npm start         # Production server
+npx tsc --noEmit  # Type check only (used in CI)
 ```
 
 ### Docker
@@ -84,6 +84,10 @@ cd app && npm run build
 - Knowledge sources → Crawler/Datahub/Voice → RAG pipeline → Vector store
 - Chat request → Orchestrator → Agent → RAG retrieval → Response
 
+### Embeddable Widget
+- `app/public/widget.js` — Vanilla JS IIFE, <5KB
+- Can be embedded on external sites with iframe mode support
+
 ## Critical Files
 
 | File | Purpose |
@@ -116,6 +120,7 @@ cd app && npm run build
 4. **API Key auth** - `X-API-Key` header. Empty = demo mode (no auth required)
 5. **No external DB** - Use SQLite for all persistence
 6. **No linting config** - Rely on TypeScript strict + conventions
+7. **API contract** - All endpoints under `/api/`. Paginated lists include `total`, `page`, `limit`
 
 ## Where to Look
 
