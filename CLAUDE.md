@@ -37,14 +37,18 @@ pytest tests/test_crawler.py                     # Crawler tests (30)
 pytest tests/test_datahub.py                     # Datahub tests (33)
 pytest tests/test_voice.py                       # Voice tests (12)
 pytest tests/ -v --cov=. --cov-report=term-missing # Coverage
+ruff check . --ignore E501                       # Lint (CI uses this)
 ```
 
 ### Frontend (working directory: `app/`)
 ```bash
-npm run dev       # Dev server (port 3000)
-npm run build     # Production build
-npm start         # Production server
-npx tsc --noEmit  # Type check only (used in CI)
+npm run dev           # Dev server (port 3000)
+npm run build         # Production build
+npm start             # Production server
+npm run lint          # ESLint check
+npm run type-check    # TypeScript check (tsc --noEmit)
+npm run test:e2e      # E2E tests (Playwright)
+npm run test:e2e:ui   # E2E tests with UI
 ```
 
 ### Docker
@@ -55,12 +59,10 @@ docker compose logs -f   # Watch logs
 ```
 
 ### CI/CD
-```bash
-# GitHub Actions runs: pytest + npm build + tsc --noEmit
-# Manual verification:
-cd backend && pytest tests/ -v
-cd app && npm run build
-```
+GitHub Actions runs on push/PR to main/develop:
+- Frontend: `npm run lint` → `npm run type-check` → `npm run build`
+- Backend: `ruff check .` → `pytest tests/ -v --cov`
+- E2E: `npm run test:e2e` (main branch only, after frontend/backend pass)
 
 ## Key Architectural Patterns
 
@@ -74,6 +76,15 @@ cd app && npm run build
 - Persistence: `backend/data/vector_store.json`
 - Document loader supports: .txt, .md, .pdf
 
+### Backend Middleware Stack
+Registered in main.py (innermost → outermost):
+1. **CORS** — `config.CORS_ORIGINS` (localhost:3000, 3001)
+2. **GZip** — Compress responses >500 bytes
+3. **RequestSize** — Reject >10MB requests
+4. **RateLimit** — SlowAPI: 60/min default, 30/min for /api/chat
+5. **CorrelationId** — `X-Correlation-ID` header for tracing
+6. **APIKeyAuth** — `X-API-Key` header (empty = demo mode)
+
 ### Frontend Structure
 - App Router with `(admin)/` route group for shared sidebar layout
 - Server components default, `"use client"` only when needed
@@ -85,8 +96,16 @@ cd app && npm run build
 - Chat request → Orchestrator → Agent → RAG retrieval → Response
 
 ### Embeddable Widget
-- `app/public/widget.js` — Vanilla JS IIFE, <5KB
-- Can be embedded on external sites with iframe mode support
+`app/public/widget.js` — Vanilla JS IIFE, <5KB. Embed on external sites:
+```html
+<script src="http://localhost:3000/widget.js"
+        data-api-url="http://localhost:8000"
+        data-theme-color="#2563EB"
+        data-position="bottom-right">
+</script>
+```
+- iframe mode: widget loads `/widget?embed=true` in an iframe
+- postMessage API: `window.SupportAIWidget.open()` / `.close()` / `.toggle()`
 
 ## Critical Files
 
