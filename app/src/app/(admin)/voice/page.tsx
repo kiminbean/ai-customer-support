@@ -10,12 +10,10 @@ import {
   getVoiceDocument,
   approveVoiceDocument,
   getVoiceJobs,
-  type VoiceJobResponse,
   type VoiceJobStatus,
   type VoiceTranscript,
   type VoiceDocument,
   type VoiceJob,
-  type VoiceQAPair,
 } from "@/lib/api";
 import { BackendBadge } from "@/components/BackendBadge";
 
@@ -155,7 +153,7 @@ export default function VoicePage() {
             setTranscript(transRes);
             setDocument(docRes);
             loadJobs(); // Refresh history
-          } catch (e) {
+          } catch {
             setErrorMsg("결과를 불러오는 중 오류가 발생했습니다.");
           }
         } else if (status.status === "failed") {

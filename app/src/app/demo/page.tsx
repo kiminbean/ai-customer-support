@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { sendMessage as apiSendMessage, type ChatResponse } from "@/lib/api";
 import { useHealthCheck } from "@/hooks/useHealthCheck";

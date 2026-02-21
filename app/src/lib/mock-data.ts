@@ -3,7 +3,7 @@
  * Consolidated from inline definitions across components
  */
 
-import type { Analytics, Conversation } from "./api";
+import type { Conversation } from "./api";
 
 // ── Stats ──
 export const MOCK_STATS = [

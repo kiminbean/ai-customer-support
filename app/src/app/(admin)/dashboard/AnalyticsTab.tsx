@@ -2,11 +2,6 @@
 
 import type { Analytics } from "@/lib/api";
 
-const MOCK_DAILY_CHART = [
-  { day: "Mon", value: 85 }, { day: "Tue", value: 92 }, { day: "Wed", value: 78 },
-  { day: "Thu", value: 96 }, { day: "Fri", value: 88 }, { day: "Sat", value: 65 }, { day: "Sun", value: 45 },
-];
-
 const MOCK_SATISFACTION_DIST = [
   { stars: 5, count: 847, pct: 66 },
   { stars: 4, count: 265, pct: 21 },
@@ -19,7 +14,7 @@ interface AnalyticsTabProps {
   analytics: Analytics | null;
 }
 
-function AnalyticsTab({ analytics }: AnalyticsTabProps) {
+export default function AnalyticsTab({ analytics }: AnalyticsTabProps) {
   const hourlyData = analytics?.hourly_data || [
     { hour: "00", v: 12 }, { hour: "03", v: 5 }, { hour: "06", v: 8 },
     { hour: "09", v: 45 }, { hour: "12", v: 62 }, { hour: "15", v: 58 },
